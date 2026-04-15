@@ -1,5 +1,4 @@
-#ifndef GRAPH_H
-#define GRAPH_H
+#pragma once
 #include "node.h"
 #include "edge.h"
 #include "graphwidget.h"
@@ -59,4 +58,3 @@ private:
     Matrix2D bandwidth;
 
 };
-#endif // GRAPH_H

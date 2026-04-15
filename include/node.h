@@ -1,5 +1,4 @@
-#ifndef NODE_H
-#define NODE_H
+#pragma once
 
 #include <QGraphicsItem>
 #include <QList>
@@ -54,5 +53,3 @@ private:
     GraphWidget *graph;
     int index;
 };
-
-#endif // NODE_H

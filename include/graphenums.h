@@ -1,5 +1,4 @@
-#ifndef GRAPHENUMS_H
-#define GRAPHENUMS_H
+#pragma once
 enum GraphFlags {
     ManualMode = 1,
     ShowWeights = 2,
@@ -14,5 +13,3 @@ enum EdgeType {
     Loop = 3,
     Error = -1
 };
-
-#endif // GRAPHENUMS_H

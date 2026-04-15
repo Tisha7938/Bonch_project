@@ -1,6 +1,4 @@
-#ifndef GRAPHWIDGET_H
-#define GRAPHWIDGET_H
-
+#pragma once
 #include <QGraphicsView>
 #include "edge.h"
 #include "graphenums.h"
@@ -45,5 +43,3 @@ private:
     QFlags<GraphFlags> *flags;
 };
 bool isItemOnScene(QGraphicsScene *scene, QGraphicsItem *item);
-
-#endif // GRAPHWIDGET_H

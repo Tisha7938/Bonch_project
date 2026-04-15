@@ -1,5 +1,4 @@
-#ifndef EDGE_H
-#define EDGE_H
+#pragma once
 #include <QGraphicsItem>
 #include "graphenums.h"
 #define txtOffset 15
@@ -41,4 +40,3 @@ private:
     QPointF destPoint;
     qreal arrowSize = 10;
 };
-#endif // EDGE_H

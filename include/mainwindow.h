@@ -1,5 +1,4 @@
-#ifndef MAINWINDOW_H
-#define MAINWINDOW_H
+#pragma once
 
 #include <QMainWindow>
 #include <QMap>
@@ -49,4 +48,3 @@ private:
     QList<QTableView *> graphListViews;
     QMap<QString, QSpinBox *> graphCountSpins;
 };
-#endif // MAINWINDOW_H
