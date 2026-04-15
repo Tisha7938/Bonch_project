@@ -1,4 +1,4 @@
-#include "graphwidget.h"
+#include "../include/graphwidget.h"
 
 #include <QKeyEvent>
 #include <QRandomGenerator>

@@ -1,4 +1,4 @@
-#include "graph.h"
+#include "../include/graph.h"
 
 Graph::Graph():
     amount(0),
