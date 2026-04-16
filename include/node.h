@@ -8,12 +8,11 @@
 class Edge;
 class GraphWidget;
 
-class Node : public QGraphicsItem
-{
+class Node : public QGraphicsItem {
 public:
     Node(int index, GraphWidget *graphWidget);
     Node();
-    Node(const Node& node);
+    Node(const Node &node);
     void addEdge(Edge *edge);
     QSet<Edge *> edges() const;
 
@@ -23,17 +22,17 @@ public:
     void calculateForces(bool manual);
     bool advancePosition();
 
-    void connectToNode(Node* node);
-    void disconnectFromNode(Node* node);
-    QSet<Node*> getChilden();
-    QSet<Node*> getParents();
+    void connectToNode(Node *node);
+    void disconnectFromNode(Node *node);
+    QSet<Node *> getChilden();
+    QSet<Node *> getParents();
 
     QRectF boundingRect() const override;
     QPainterPath shape() const override;
     int getIndex();
     void setIndex(unsigned int);
 
-    Node& operator=(const Node&);
+    Node &operator=(const Node &);
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) override;
     void extracted();
     ~Node();

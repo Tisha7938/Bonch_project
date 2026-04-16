@@ -4,19 +4,18 @@
 #define txtOffset 15
 #define curvines 25
 class Node;
-class Edge : public QGraphicsItem
-{
+class Edge : public QGraphicsItem {
 public:
     Edge(Node *sourceNode, Node *destNode, double weight, EdgeType edgeType);
-    Edge(Node *sourceNode, Node *destNode, double weight,double flow, EdgeType edgeType);
+    Edge(Node *sourceNode, Node *destNode, double weight, double flow, EdgeType edgeType);
     Node *sourceNode() const;
     Node *destNode() const;
-    //setters
+    // setters
     void setWeight(double weight);
     void setFlow(double flow);
     void setBandwidth(double bandwidth);
     void setEdgeType(EdgeType type);
-    //getters
+    // getters
     double getWeight() const;
     double getFlow() const;
     double getBandwidth() const;
@@ -26,9 +25,11 @@ public:
     int type() const override { return Type; }
     ~Edge();
     static void setFlagsPtr(QFlags<GraphFlags> *flagsPtr);
+
 protected:
     QRectF boundingRect() const override;
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) override;
+
 private:
     static QFlags<GraphFlags> *graphFlags;
     EdgeType edgeType;

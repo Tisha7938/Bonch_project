@@ -8,9 +8,7 @@
 #include <QRandomGenerator>
 #include <QStyleOption>
 
-Node::Node(int index, GraphWidget *graphWidget)
-    : graph(graphWidget)
-{
+Node::Node(int index, GraphWidget *graphWidget) : graph(graphWidget) {
     this->index = index;
     setFlag(ItemIsMovable);
     setFlag(ItemSendsGeometryChanges);
@@ -19,23 +17,17 @@ Node::Node(int index, GraphWidget *graphWidget)
     this->setPos(QRandomGenerator::global()->bounded(300), QRandomGenerator::global()->bounded(300));
 }
 
-Node::Node():graph(nullptr), index(0)
-{}
+Node::Node() : graph(nullptr), index(0) {}
 
 
-void Node::addEdge(Edge *edge)
-{
+void Node::addEdge(Edge *edge) {
     edgeList << edge;
     edge->adjust();
 }
 
-QSet<Edge *> Node::edges() const
-{
-    return edgeList;
-}
+QSet<Edge *> Node::edges() const { return edgeList; }
 
-void Node::calculateForces(bool manual)
-{
+void Node::calculateForces(bool manual) {
     if (!scene() || manual || scene()->mouseGrabberItem() == this) {
         newPos = pos();
         return;
@@ -45,7 +37,7 @@ void Node::calculateForces(bool manual)
     qreal xvel = 0;
     qreal yvel = 0;
     const QList<QGraphicsItem *> items = scene()->items();
-    for (QGraphicsItem *item : items) {
+    for (QGraphicsItem *item: items) {
         Node *node = qgraphicsitem_cast<Node *>(item);
         if (!node)
             continue;
@@ -62,7 +54,7 @@ void Node::calculateForces(bool manual)
 
     // Now subtract all forces pulling items together
     double weight = (edgeList.size() + 1) * 50;
-    for (const Edge *edge : std::as_const(edgeList)) {
+    for (const Edge *edge: std::as_const(edgeList)) {
         QPointF vec;
         if (edge->sourceNode() == this)
             vec = mapToItem(edge->destNode(), 0, 0);
@@ -81,8 +73,7 @@ void Node::calculateForces(bool manual)
     newPos.setY(qMin(qMax(newPos.y(), sceneRect.top() + 10), sceneRect.bottom() - 10));
 }
 
-bool Node::advancePosition()
-{
+bool Node::advancePosition() {
     if (newPos == pos())
         return false;
 
@@ -90,9 +81,8 @@ bool Node::advancePosition()
     return true;
 }
 
-void Node::connectToNode(Node *node)
-{
-    if(node==nullptr){
+void Node::connectToNode(Node *node) {
+    if (node == nullptr) {
         return;
     }
     this->children.insert(node);
@@ -103,61 +93,42 @@ void Node::disconnectFromNode(Node *node) {
     if (node == nullptr) {
         return;
     }
-    if(node == this){
+    if (node == this) {
 
-        if(children.find(this)!=children.end()){
-            edgeList.removeIf([](Edge* i){
-                return i->getEdgeType() == EdgeType::Loop;
-            });
+        if (children.find(this) != children.end()) {
+            edgeList.removeIf([](Edge *i) { return i->getEdgeType() == EdgeType::Loop; });
             this->children.remove(this);
             this->parents.remove(this);
         }
-    }else {
-        if(children.find(node)!=children.end()){
-            edgeList.removeIf([&node](Edge* i){
-                return i->destNode() == node;
-            });
-            node->edgeList.removeIf([this](Edge* i){
-                return i->sourceNode() == this;
-            });
+    } else {
+        if (children.find(node) != children.end()) {
+            edgeList.removeIf([&node](Edge *i) { return i->destNode() == node; });
+            node->edgeList.removeIf([this](Edge *i) { return i->sourceNode() == this; });
             this->children.remove(node);
             node->parents.remove(this);
         }
     }
 }
 
-QSet<Node *> Node::getChilden()
-{
-    return this->children;
-}
+QSet<Node *> Node::getChilden() { return this->children; }
 
-QSet<Node *> Node::getParents()
-{
-    return this->parents;
-}
+QSet<Node *> Node::getParents() { return this->parents; }
 
-QRectF Node::boundingRect() const
-{
+QRectF Node::boundingRect() const {
     qreal adjust = 2;
-    return QRectF( -nodeSize/2 - adjust, -nodeSize/2 - adjust, nodeSize+strokeWidth + adjust, nodeSize+strokeWidth + adjust);
+    return QRectF(-nodeSize / 2 - adjust, -nodeSize / 2 - adjust, nodeSize + strokeWidth + adjust,
+                  nodeSize + strokeWidth + adjust);
 }
 
-QPainterPath Node::shape() const
-{
+QPainterPath Node::shape() const {
     QPainterPath path;
-    path.addEllipse(-nodeSize/2, -nodeSize/2, nodeSize, nodeSize);
+    path.addEllipse(-nodeSize / 2, -nodeSize / 2, nodeSize, nodeSize);
     return path;
 }
 
-int Node::getIndex()
-{
-    return this->index;
-}
+int Node::getIndex() { return this->index; }
 
-void Node::setIndex(unsigned int num)
-{
-    this->index= num;
-}
+void Node::setIndex(unsigned int num) { this->index = num; }
 
 
 void Node::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *) {
@@ -165,57 +136,54 @@ void Node::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     painter->fillPath(shape(), QBrush(Qt::white));
     painter->setPen(QPen(Qt::black, 2));
     painter->drawPath(shape());
-    //font setting up
+    // font setting up
     QFont font = painter->font();
     font.setBold(true);
     font.setPointSize(14);
     painter->setFont(font);
-    //get text boxing
+    // get text boxing
     QString nodeText = QString::number(index);
     QFontMetrics metrics(font);
     QRect textRect = metrics.boundingRect(nodeText);
 
-    //get coords of text
-    QPointF textPnt(-(textRect.width())/2 -0.7 , textRect.height()/3. - 0.7);;
+    // get coords of text
+    QPointF textPnt(-(textRect.width()) / 2 - 0.7, textRect.height() / 3. - 0.7);
+    ;
 
-    //drawing text
+    // drawing text
     painter->setPen(Qt::black);
     painter->drawText(textPnt, nodeText);
 }
 
-Node::~Node()
-{
-    for(auto& child: std::as_const(children)){
+Node::~Node() {
+    for (auto &child: std::as_const(children)) {
         this->disconnectFromNode(child);
     }
-    for(auto& parent: std::as_const(parents)){
+    for (auto &parent: std::as_const(parents)) {
         parent->disconnectFromNode(this);
     }
 }
 
-QVariant Node::itemChange(GraphicsItemChange change, const QVariant &value)
-{
+QVariant Node::itemChange(GraphicsItemChange change, const QVariant &value) {
     switch (change) {
-    case ItemPositionHasChanged:
-        for (Edge *edge : std::as_const(edgeList))
-            edge->adjust();
-        graph->runTimer();
-        break;
-    default:
-        break;
+        case ItemPositionHasChanged:
+            for (Edge *edge: std::as_const(edgeList))
+                edge->adjust();
+            graph->runTimer();
+            break;
+        default:
+            break;
     };
 
     return QGraphicsItem::itemChange(change, value);
 }
 
-void Node::mousePressEvent(QGraphicsSceneMouseEvent *event)
-{
+void Node::mousePressEvent(QGraphicsSceneMouseEvent *event) {
     update();
     QGraphicsItem::mousePressEvent(event);
 }
 
-void Node::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
-{
+void Node::mouseReleaseEvent(QGraphicsSceneMouseEvent *event) {
     update();
     QGraphicsItem::mouseReleaseEvent(event);
 }
