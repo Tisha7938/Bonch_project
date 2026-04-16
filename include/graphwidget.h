@@ -7,12 +7,12 @@
 typedef QList<QList<double>> Matrix2D;
 class Node;
 
-class GraphWidget : public QGraphicsView
-{
+class GraphWidget : public QGraphicsView {
     Q_OBJECT
 
 public:
-    GraphWidget(QMap<QPair<Node*, Node*>, Edge*>* edges, QMap<unsigned int, Node*>* nodes, QFlags<GraphFlags> *flags, QWidget *parent = nullptr);
+    GraphWidget(QMap<QPair<Node *, Node *>, Edge *> *edges, QMap<unsigned int, Node *> *nodes,
+                QFlags<GraphFlags> *flags, QWidget *parent = nullptr);
 
     void runTimer();
     void initScene();
@@ -20,6 +20,7 @@ public:
 public slots:
     void zoomIn();
     void zoomOut();
+
 protected:
     void keyPressEvent(QKeyEvent *event) override;
     void timerEvent(QTimerEvent *event) override;
@@ -37,8 +38,8 @@ private:
     QPointF prevScenePos;
     int timerId = 0;
     QGraphicsScene *scenePtr;
-    QMap<QPair<Node*, Node*>, Edge*>* edges;
-    QMap<unsigned int, Node*>* nodes;
+    QMap<QPair<Node *, Node *>, Edge *> *edges;
+    QMap<unsigned int, Node *> *nodes;
     int amount;
     QFlags<GraphFlags> *flags;
 };
