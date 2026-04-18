@@ -28,6 +28,7 @@ add_executable(final_project
         include/mainwindow.h
         include/node.h
         mainwindow.ui
+        resources.qrc
 )
 
 target_link_libraries(final_project

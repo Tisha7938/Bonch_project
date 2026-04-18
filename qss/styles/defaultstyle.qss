@@ -1,0 +1,26 @@
+QMainWindow {
+    background-color: #f0f0f0;
+}
+
+QToolBar {
+    background-color: #ffffff;
+    border: 1px solid #cccccc;
+    padding: 2px;
+}
+
+QDockWidget {
+    background-color: #ffffff;
+    titlebar-close-icon: url(:/ico/icons/Clear.svg);
+}
+
+QPushButton {
+    background-color: #4CAF50;
+    color: white;
+    padding: 5px 10px;
+    border: none;
+    border-radius: 3px;
+}
+
+QPushButton:hover {
+    background-color: #45a049;
+}
