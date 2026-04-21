@@ -5,13 +5,119 @@
 #include <QStandardItemModel>
 #include <QToolTip>
 #include <set>
+#include <QStyle>
 #include "qspinbox.h"
 #include "ui_mainwindow.h"
+
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow) {
     ui->setupUi(this);
+
+           // --- Настройка вкладок ---
+    this->setDockOptions(this->dockOptions() & ~QMainWindow::VerticalTabs);
+    this->setTabPosition(Qt::AllDockWidgetAreas, QTabWidget::North);
+
+           // --- Иконки ---
+    ui->actionUndo->setIcon(style()->standardIcon(QStyle::SP_ArrowBack));
+    ui->actionRedo->setIcon(style()->standardIcon(QStyle::SP_ArrowForward));
+    ui->actionSave_as->setIcon(style()->standardIcon(QStyle::SP_DialogSaveButton));
+    ui->actionCopy->setIcon(style()->standardIcon(QStyle::SP_FileIcon));
+    ui->actionPaste->setIcon(style()->standardIcon(QStyle::SP_DialogOkButton));
+
+    ui->actionLaunchAlg->setIcon(style()->standardIcon(QStyle::SP_MediaPlay));
+    ui->actionDeleteGraph->setIcon(style()->standardIcon(QStyle::SP_TrashIcon));
+    ui->actionAddNode->setIcon(style()->standardIcon(QStyle::SP_FileIcon));
+    ui->actionDeleteNode->setIcon(style()->standardIcon(QStyle::SP_DialogDiscardButton));
+
+    ui->actionRefreshTables->setIcon(style()->standardIcon(QStyle::SP_BrowserReload));
+    ui->actionClearConsole->setIcon(style()->standardIcon(QStyle::SP_DialogResetButton));
+
+           // ===================================================
+           // --- ЛОГИКА КНОПОК ИНСТРУМЕНТОВ ---
+           // ===================================================
+
+    connect(ui->actionAddNode, &QAction::triggered, this, [this]() {
+        saveState(); // Сохраняем состояние до изменений
+        int newAmount = graph.getAmount() + 1;
+        graph.resizeGraph(graph.getAmount(), newAmount);
+        graph.graphView->initScene();
+        updateTables();
+        ui->textEdit_Console->appendPlainText("Добавлен новый узел. Текущее количество: " + QString::number(newAmount));
+    });
+
+    connect(ui->actionDeleteNode, &QAction::triggered, this, [this]() {
+        if (graph.getAmount() > 0) {
+            saveState(); // Сохраняем состояние до изменений
+            int newAmount = graph.getAmount() - 1;
+            graph.resizeGraph(graph.getAmount(), newAmount);
+            graph.graphView->scene()->update();
+            updateTables();
+            ui->textEdit_Console->appendPlainText("Узел удален. Текущее количество: " + QString::number(newAmount));
+        }
+    });
+
+    connect(ui->actionDeleteGraph, &QAction::triggered, this, [this]() {
+        saveState(); // Сохраняем состояние до изменений
+        graph.resizeGraph(graph.getAmount(), 0);
+        graph.graphView->scene()->update();
+        updateTables();
+        ui->textEdit_Console->appendPlainText("Граф полностью очищен.");
+    });
+
+    connect(ui->actionClearConsole, &QAction::triggered, this, &MainWindow::buttonClearConsoleClicked);
+
+           // --- ОТМЕНИТЬ (UNDO) ---
+    connect(ui->actionUndo, &QAction::triggered, this, [this]() {
+        if (currentStateIndex > 0) {
+            currentStateIndex--;
+            restoreState(undoStack[currentStateIndex]);
+            ui->textEdit_Console->appendPlainText("<- Шаг назад (Отмена выполнена).");
+        } else {
+            ui->textEdit_Console->appendPlainText("Больше нечего отменять.");
+        }
+    });
+
+           // --- ПОВТОРИТЬ (REDO) ---
+    connect(ui->actionRedo, &QAction::triggered, this, [this]() {
+        if (currentStateIndex < undoStack.size() - 1) {
+            currentStateIndex++;
+            restoreState(undoStack[currentStateIndex]);
+            ui->textEdit_Console->appendPlainText("-> Шаг вперед (Повтор выполнен).");
+        } else {
+            ui->textEdit_Console->appendPlainText("Больше нечего повторять.");
+        }
+    });
+
+           // --- ЗАПУСК АЛГОРИТМА ---
+    connect(ui->actionLaunchAlg, &QAction::triggered, this, [this]() {
+        ui->textEdit_Console->appendPlainText("\n=== ЗАПУСК АЛГОРИТМА ===");
+
+        // Пример базового анализа графа (замените на свой алгоритм)
+        auto edgesList = graph.getListEdges();
+        double totalWeight = 0;
+        double totalFlow = 0;
+
+        for (const auto& edgeInfo : edgesList) {
+            totalWeight += edgeInfo[2].toDouble(); // Индекс 2 - это вес (weight)
+            totalFlow += edgeInfo[4].toDouble();   // Индекс 4 - это поток (flow)
+        }
+
+        ui->textEdit_Console->appendPlainText("Узлов в графе: " + QString::number(graph.getAmount()));
+        ui->textEdit_Console->appendPlainText("Ребер в графе: " + QString::number(edgesList.size()));
+        ui->textEdit_Console->appendPlainText("Общий вес всех ребер: " + QString::number(totalWeight));
+        ui->textEdit_Console->appendPlainText("Общий текущий поток: " + QString::number(totalFlow));
+
+        // ВАЖНО: Вы можете вызывать методы расчета вашего алгоритма прямо здесь!
+
+        ui->textEdit_Console->appendPlainText("========================\n");
+    });
+    // ===================================================
+
     auto spinBoxes = this->findChildren<QSpinBox *>();
     auto pushButtons = this->findChildren<QPushButton *>();
+
     for (auto *table: this->findChildren<QTableView *>()) {
+        table->setAlternatingRowColors(true);
+
         if (table->objectName().endsWith("Graph")) {
             auto name = table->objectName().replace("table_", "").replace("_Graph", "");
 
@@ -137,12 +243,57 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         ((QMenu *) i)->setWindowFlag(Qt::NoDropShadowWindowHint);
         ((QMenu *) i)->setAttribute(Qt::WA_TranslucentBackground);
     }
+
+    // Сохраняем самое первое (пустое) состояние графа при запуске программы
+    saveState();
 }
 
 MainWindow::~MainWindow() {
     delete nodeMovementGroup;
     delete ui;
 }
+
+// ===================================================
+// МЕТОДЫ ДЛЯ СИСТЕМЫ UNDO / REDO
+// ===================================================
+
+void MainWindow::saveState() {
+    // Если мы отменили несколько шагов и сделали новое действие, стираем "будущее" (Redo)
+    while (undoStack.size() > currentStateIndex + 1) {
+        undoStack.removeLast();
+    }
+
+    GraphState s;
+    s.amount = graph.getAmount();
+    s.adj = graph.getMatrixAdjacent();
+    s.flow = graph.getMatrixFlow();
+    s.band = graph.getMatrixBandwidth();
+
+    undoStack.append(s);
+    currentStateIndex++;
+}
+
+void MainWindow::restoreState(const GraphState& state) {
+    // Сначала корректируем размер графа
+    graph.resizeGraph(graph.getAmount(), state.amount);
+
+    // Копируем матрицы из снимка
+    Matrix2D adj = state.adj;
+    Matrix2D flow = state.flow;
+    Matrix2D band = state.band;
+
+    // Применяем матрицы
+    graph.setMatrixAdjacent(adj);
+    graph.setMatrixFlow(flow);
+    graph.setMatrixBandwidth(band);
+
+    // Перерисовываем холст и обновляем таблицы
+    graph.graphView->initScene();
+    graph.graphView->scene()->update();
+    updateTables();
+}
+
+// ===================================================
 
 void MainWindow::buttonClearConsoleClicked() { ui->textEdit_Console->clear(); }
 
@@ -301,6 +452,8 @@ void MainWindow::copyTableToClipboard(QTableView *src) {
 }
 
 void MainWindow::applyGraphMatrix(QTableView *table) {
+    saveState(); // Сохраняем состояние графа перед применением матрицы
+
     QStandardItemModel *model = static_cast<QStandardItemModel *>(table->model());
     int oldAmount = model->rowCount();
     int newAmount = graphCountSpins[table->objectName()]->value();
@@ -332,6 +485,8 @@ void MainWindow::applyGraphMatrix(QTableView *table) {
 }
 
 void MainWindow::applyEdgesList(QTableView *table) {
+    saveState(); // Сохраняем состояние перед применением новых связей
+
     auto model = static_cast<QStandardItemModel *>(table->model());
     int rowCount = model->rowCount();
     int amount = graph.getAmount();

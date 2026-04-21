@@ -2,6 +2,7 @@
 
 #include <QMainWindow>
 #include <QMap>
+#include <QList>
 #include "graph.h"
 #include "qactiongroup.h"
 #include "qpushbutton.h"
@@ -10,12 +11,19 @@
 #include "qtableview.h"
 
 QT_BEGIN_NAMESPACE
-namespace Ui {
-    class MainWindow;
-}
+namespace Ui { class MainWindow; }
 QT_END_NAMESPACE
 
-class MainWindow : public QMainWindow {
+// Структура для сохранения состояния графа во времени (Undo/Redo)
+struct GraphState {
+    unsigned int amount;
+    Matrix2D adj;
+    Matrix2D flow;
+    Matrix2D band;
+};
+
+class MainWindow : public QMainWindow
+{
     Q_OBJECT
 
 public:
@@ -34,6 +42,14 @@ private:
     Ui::MainWindow *ui;
     QMap<QWidget *, QPushButton *> pins;
     QMap<QString, QWidget *> docksViewMode;
+
+    // --- Переменные и методы для работы Отмены/Повтора ---
+    QList<GraphState> undoStack;
+    int currentStateIndex = -1;
+    void saveState();
+    void restoreState(const GraphState& state);
+    // -----------------------------------------------------
+
     void unpinTab(int index);
     void pinTab();
     void pasteClipboardToTable(QTableView *dest);

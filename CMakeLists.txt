@@ -28,6 +28,7 @@ add_executable(final_project
         include/mainwindow.h
         include/node.h
         mainwindow.ui
+        .gitignore
 )
 
 target_link_libraries(final_project

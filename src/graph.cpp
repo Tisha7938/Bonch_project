@@ -19,12 +19,11 @@ Graph::Graph(Matrix2D &matrix) :
     Edge::setFlagsPtr(&flags);
     // create nodes accoring to matrix size
     for (unsigned int i = 0; i != amount; i++) { // adding all nodes
-        // Node *node1 = new Node(i, graphView);
         nodes[i] = new Node(i, graphView);
     }
 
 
-    // create edges with edge type definition
+           // create edges with edge type definition
     for (unsigned int i = 0; i != amount; i++) {
         for (unsigned int j = i; j != amount; j++) {
             if (i != j) {
@@ -48,11 +47,7 @@ Graph::Graph(Matrix2D &matrix) :
                 if (edge2) {
                     edges[qMakePair(nodes[j], nodes[i])] = edge2;
                 }
-            } //
-            // Created by tisha on 4/15/26.
-            //
-
-#include "../include/graph.h"
+            }
         }
     }
 }
