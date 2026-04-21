@@ -1,24 +1,24 @@
 #include "../include/mainwindow.h"
 #include <QClipboard>
+#include <QFileDialog>
 #include <QMessageBox>
 #include <QShortcut>
 #include <QStandardItemModel>
+#include <QStyle>
+#include <QTextStream>
 #include <QToolTip>
 #include <set>
-#include <QStyle>
-#include <QFileDialog>
-#include <QTextStream>
 #include "qspinbox.h"
 #include "ui_mainwindow.h"
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow) {
     ui->setupUi(this);
 
-           // --- Настройка вкладок ---
+    // --- Настройка вкладок ---
     this->setDockOptions(this->dockOptions() & ~QMainWindow::VerticalTabs);
     this->setTabPosition(Qt::AllDockWidgetAreas, QTabWidget::North);
 
-           // --- Иконки и Подсказки ---
+    // --- Иконки и Подсказки ---
     ui->actionUndo->setIcon(style()->standardIcon(QStyle::SP_ArrowBack));
     ui->actionUndo->setToolTip("Отменить последнее действие (Ctrl+Z)");
 
@@ -115,7 +115,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     auto spinBoxes = this->findChildren<QSpinBox *>();
     auto pushButtons = this->findChildren<QPushButton *>();
 
-    for (auto *button : pushButtons) {
+    for (auto *button: pushButtons) {
         if (button->text().contains("Clear") || button->objectName().contains("clear")) {
             connect(button, &QPushButton::clicked, this, &MainWindow::buttonClearConsoleClicked);
         }
@@ -129,7 +129,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                 graphMatrixViews.append(table);
             } else if (name.startsWith("List")) {
                 graphListViews.append(table);
-                if (name.endsWith("Edges")) table->setModel(new QStandardItemModel(0, 0));
+                if (name.endsWith("Edges"))
+                    table->setModel(new QStandardItemModel(0, 0));
             }
 
             for (auto *spinBox: spinBoxes) {
@@ -145,13 +146,16 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             for (auto *button: pushButtons) {
                 if (button->objectName().startsWith("button_" + name) && button->objectName().endsWith("_Apply")) {
                     if (name.startsWith("Matrix"))
-                        connect(button, &QPushButton::clicked, this, std::bind(&MainWindow::applyGraphMatrix, this, table));
+                        connect(button, &QPushButton::clicked, this,
+                                std::bind(&MainWindow::applyGraphMatrix, this, table));
                     else if (name == "ListEdges")
-                        connect(button, &QPushButton::clicked, this, std::bind(&MainWindow::applyEdgesList, this, table));
+                        connect(button, &QPushButton::clicked, this,
+                                std::bind(&MainWindow::applyEdgesList, this, table));
                 }
             }
         }
-        if (table->model() == nullptr) table->setModel(new QStandardItemModel(0, 0));
+        if (table->model() == nullptr)
+            table->setModel(new QStandardItemModel(0, 0));
     }
 
     connect(ui->actionBandwidth, &QAction::triggered, this, [this](bool checked) {
@@ -180,9 +184,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                 act->setCheckable(true);
                 act->setChecked(true);
                 this->tabifyDockWidget(dockStack, dock);
-                if (!dockTop) dockTop = dock;
+                if (!dockTop)
+                    dockTop = dock;
                 docksViewMode.insert(dock->windowTitle(), dock);
-                connect(act, &QAction::triggered, this, std::bind(&MainWindow::viewModeChecked, this, std::placeholders::_1));
+                connect(act, &QAction::triggered, this,
+                        std::bind(&MainWindow::viewModeChecked, this, std::placeholders::_1));
                 view->addAction(act);
             }
         }
@@ -190,7 +196,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             dockStack->hide();
             dockStack->setDisabled(true);
         }
-        if (dockTop) dockTop->raise();
+        if (dockTop)
+            dockTop->raise();
     }
 
     ui->centralwidget->layout()->removeWidget(ui->graphView);
@@ -203,11 +210,15 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     nodeMovementGroup->addAction(ui->actionAutomatic);
     nodeMovementGroup->addAction(ui->actionManual);
     connect(ui->actionManual, &QAction::triggered, this, [this](bool checked) {
-        if (checked) graph.setFlag(GraphFlags::ManualMode);
+        if (checked)
+            graph.setFlag(GraphFlags::ManualMode);
         graph.graphView->scene()->update();
     });
     connect(ui->actionAutomatic, &QAction::triggered, this, [this](bool checked) {
-        if (checked) { graph.unsetFlag(GraphFlags::ManualMode); graph.graphView->runTimer(); }
+        if (checked) {
+            graph.unsetFlag(GraphFlags::ManualMode);
+            graph.graphView->runTimer();
+        }
     });
     ui->actionAutomatic->setChecked(true);
     saveState();
@@ -220,7 +231,8 @@ MainWindow::~MainWindow() {
 
 void MainWindow::saveToFile() {
     QString fileName = QFileDialog::getSaveFileName(this, "Сохранить граф", "", "Graph Files (*.gr);;All Files (*)");
-    if (fileName.isEmpty()) return;
+    if (fileName.isEmpty())
+        return;
 
     QFile file(fileName);
     if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
@@ -232,7 +244,7 @@ void MainWindow::saveToFile() {
     unsigned int n = graph.getAmount();
     out << "Nodes: " << n << "\n\n";
 
-    auto saveMatrix = [&](const QString& title, const Matrix2D& m) {
+    auto saveMatrix = [&](const QString &title, const Matrix2D &m) {
         out << title << ":\n";
         for (unsigned int i = 0; i < n; ++i) {
             for (unsigned int j = 0; j < n; ++j) {
@@ -252,7 +264,8 @@ void MainWindow::saveToFile() {
 }
 
 void MainWindow::saveState() {
-    while (undoStack.size() > currentStateIndex + 1) undoStack.removeLast();
+    while (undoStack.size() > currentStateIndex + 1)
+        undoStack.removeLast();
     GraphState s;
     s.amount = graph.getAmount();
     s.adj = graph.getMatrixAdjacent();
@@ -262,11 +275,11 @@ void MainWindow::saveState() {
     currentStateIndex++;
 }
 
-void MainWindow::restoreState(const GraphState& state) {
+void MainWindow::restoreState(const GraphState &state) {
     graph.resizeGraph(graph.getAmount(), state.amount);
-    graph.setMatrixAdjacent(const_cast<Matrix2D&>(state.adj));
-    graph.setMatrixFlow(const_cast<Matrix2D&>(state.flow));
-    graph.setMatrixBandwidth(const_cast<Matrix2D&>(state.band));
+    graph.setMatrixAdjacent(const_cast<Matrix2D &>(state.adj));
+    graph.setMatrixFlow(const_cast<Matrix2D &>(state.flow));
+    graph.setMatrixBandwidth(const_cast<Matrix2D &>(state.band));
     graph.graphView->initScene();
     updateTables();
 }
@@ -274,18 +287,20 @@ void MainWindow::restoreState(const GraphState& state) {
 void MainWindow::buttonClearConsoleClicked() { ui->textEdit_Console->clear(); }
 
 void MainWindow::pasteClipboardToTable(QTableView *dest) {
-    if (!dest->hasFocus()) return;
+    if (!dest->hasFocus())
+        return;
     QString text = QApplication::clipboard()->text();
     QStandardItemModel *model = static_cast<QStandardItemModel *>(dest->model());
     QModelIndexList indexes = dest->selectionModel()->selectedIndexes();
-    if (indexes.empty()) return;
+    if (indexes.empty())
+        return;
     int row = indexes.first().row();
     int col = indexes.first().column();
     auto rows = text.split('\n', Qt::SkipEmptyParts);
-    for(int i=0; i<rows.size() && (row+i)<model->rowCount(); ++i) {
+    for (int i = 0; i < rows.size() && (row + i) < model->rowCount(); ++i) {
         auto cols = rows[i].split('\t');
-        for(int j=0; j<cols.size() && (col+j)<model->columnCount(); ++j) {
-            model->item(row+i, col+j)->setText(cols[j]);
+        for (int j = 0; j < cols.size() && (col + j) < model->columnCount(); ++j) {
+            model->item(row + i, col + j)->setText(cols[j]);
         }
     }
 }
@@ -298,7 +313,8 @@ void MainWindow::viewModeChecked(bool checked) {
 void MainWindow::setNodesAmountMatrix(QTableView *table, int newAmount) {
     QStandardItemModel *model = static_cast<QStandardItemModel *>(table->model());
     int oldAmount = model->columnCount();
-    if (newAmount < 0) newAmount = 0;
+    if (newAmount < 0)
+        newAmount = 0;
     if (oldAmount < newAmount) {
         int delta = newAmount - oldAmount;
         model->insertColumns(oldAmount, delta);
@@ -310,7 +326,8 @@ void MainWindow::setNodesAmountMatrix(QTableView *table, int newAmount) {
             table->setRowHeight(i, 25);
             for (int j = 0; j < newAmount; ++j) {
                 model->setItem(i, j, new QStandardItem("0"));
-                if (i != j) model->setItem(j, i, new QStandardItem("0"));
+                if (i != j)
+                    model->setItem(j, i, new QStandardItem("0"));
             }
         }
     } else {
@@ -320,15 +337,17 @@ void MainWindow::setNodesAmountMatrix(QTableView *table, int newAmount) {
 }
 
 void MainWindow::copyTableToClipboard(QTableView *src) {
-    if (!src->hasFocus()) return;
+    if (!src->hasFocus())
+        return;
     QModelIndexList indexes = src->selectionModel()->selectedIndexes();
-    if (indexes.empty()) return;
+    if (indexes.empty())
+        return;
     std::sort(indexes.begin(), indexes.end());
     QString text;
     for (int i = 0; i < indexes.count(); ++i) {
         text.append(src->model()->data(indexes[i]).toString());
         if (i + 1 < indexes.count()) {
-            text.append(indexes[i+1].row() != indexes[i].row() ? "\n" : "\t");
+            text.append(indexes[i + 1].row() != indexes[i].row() ? "\n" : "\t");
         }
     }
     QApplication::clipboard()->setText(text);
@@ -340,11 +359,15 @@ void MainWindow::applyGraphMatrix(QTableView *table) {
     int n = model->rowCount();
     Matrix2D m(n, QList<double>(n));
     for (int i = 0; i < n; i++) {
-        for (int j = 0; j < n; j++) m[i][j] = model->item(i, j)->text().toDouble();
+        for (int j = 0; j < n; j++)
+            m[i][j] = model->item(i, j)->text().toDouble();
     }
-    if (table->objectName().contains("Adj")) graph.setMatrixAdjacent(m);
-    else if (table->objectName().contains("Flow")) graph.setMatrixFlow(m);
-    else if (table->objectName().contains("Bandwidth")) graph.setMatrixBandwidth(m);
+    if (table->objectName().contains("Adj"))
+        graph.setMatrixAdjacent(m);
+    else if (table->objectName().contains("Flow"))
+        graph.setMatrixFlow(m);
+    else if (table->objectName().contains("Bandwidth"))
+        graph.setMatrixBandwidth(m);
     graph.graphView->initScene();
     updateTables();
 }
@@ -360,7 +383,8 @@ void MainWindow::applyEdgesList(QTableView *table) {
             graph.setEdgeWeight(u, v, w);
             graph.setEdgeBandwidth(u, v, model->item(i, 3)->text().toDouble());
             graph.setEdgeFlow(u, v, model->item(i, 4)->text().toDouble());
-        } else graph.removeEdge(u, v);
+        } else
+            graph.removeEdge(u, v);
     }
     updateTables();
 }
@@ -373,24 +397,36 @@ void MainWindow::updateEdgesList(QTableView *list) {
     QStringList headers = {"U", "V", "Weight", "Band", "Flow"};
     model->setHorizontalHeaderLabels(headers);
     for (int i = 0; i < edges.size(); i++) {
-        for (int j = 0; j < 5; j++) model->setItem(i, j, new QStandardItem(edges[i][j].toString()));
+        for (int j = 0; j < 5; j++)
+            model->setItem(i, j, new QStandardItem(edges[i][j].toString()));
     }
 }
 
 void MainWindow::updateTables() {
     unsigned int n = graph.getAmount();
-    for (auto &spin : graphCountSpins) spin->setValue(n);
-    for (auto &table : graphMatrixViews) {
+    for (auto &spin: graphCountSpins)
+        spin->setValue(n);
+    for (auto &table: graphMatrixViews) {
         QString name = table->objectName();
-        if (name.contains("Adj")) setTableFromMatrix(table, graph.getMatrixAdjacent(), n, n);
-        else if (name.contains("Flow")) setTableFromMatrix(table, graph.getMatrixFlow(), n, n);
-        else if (name.contains("Bandwidth")) setTableFromMatrix(table, graph.getMatrixBandwidth(), n, n);
+        if (name.contains("Adj"))
+            setTableFromMatrix(table, graph.getMatrixAdjacent(), n, n);
+        else if (name.contains("Flow"))
+            setTableFromMatrix(table, graph.getMatrixFlow(), n, n);
+        else if (name.contains("Bandwidth"))
+            setTableFromMatrix(table, graph.getMatrixBandwidth(), n, n);
     }
-    for (auto &list : graphListViews) updateEdgesList(list);
+    for (auto &list: graphListViews)
+        updateEdgesList(list);
 }
 
-void MainWindow::myCopy() { if (auto *t = qobject_cast<QTableView*>(focusWidget())) copyTableToClipboard(t); }
-void MainWindow::myPaste() { if (auto *t = qobject_cast<QTableView*>(focusWidget())) pasteClipboardToTable(t); }
+void MainWindow::myCopy() {
+    if (auto *t = qobject_cast<QTableView *>(focusWidget()))
+        copyTableToClipboard(t);
+}
+void MainWindow::myPaste() {
+    if (auto *t = qobject_cast<QTableView *>(focusWidget()))
+        pasteClipboardToTable(t);
+}
 
 template<typename T>
 void MainWindow::setTableFromMatrix(QTableView *table, T &matrix, int h, int w) {
@@ -399,7 +435,8 @@ void MainWindow::setTableFromMatrix(QTableView *table, T &matrix, int h, int w) 
     model->setColumnCount(w);
     for (int i = 0; i < h; i++) {
         for (int j = 0; j < w; j++) {
-            if (!model->item(i, j)) model->setItem(i, j, new QStandardItem());
+            if (!model->item(i, j))
+                model->setItem(i, j, new QStandardItem());
             model->item(i, j)->setText(QString::number(matrix[i][j]));
         }
     }

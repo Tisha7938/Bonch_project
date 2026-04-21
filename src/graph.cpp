@@ -1,8 +1,6 @@
 #include "../include/graph.h"
 
-Graph::Graph() :
-    amount(0), adjacent(Matrix2D(0)), flow(Matrix2D(0)),
-    bandwidth(Matrix2D(0)) {
+Graph::Graph() : amount(0), adjacent(Matrix2D(0)), flow(Matrix2D(0)), bandwidth(Matrix2D(0)) {
     graphView = new GraphWidget(&edges, &nodes, &flags);
     Edge::setFlagsPtr(&flags);
 }
@@ -23,7 +21,7 @@ Graph::Graph(Matrix2D &matrix) :
     }
 
 
-           // create edges with edge type definition
+    // create edges with edge type definition
     for (unsigned int i = 0; i != amount; i++) {
         for (unsigned int j = i; j != amount; j++) {
             if (i != j) {
