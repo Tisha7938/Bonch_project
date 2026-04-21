@@ -1,7 +1,7 @@
 #pragma once
 #include <QGraphicsView>
-#include "edge.h"
 #include "graphenums.h"
+#include "edge.h"
 #include "node.h"
 
 typedef QList<QList<double>> Matrix2D;

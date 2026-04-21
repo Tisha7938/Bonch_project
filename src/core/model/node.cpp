@@ -1,6 +1,6 @@
-#include "../include/node.h"
-#include "../include/edge.h"
-#include "../include/graphwidget.h"
+#include "node.h"
+#include "graphwidget.h"
+#include "edge.h"
 
 #include <QGraphicsScene>
 #include <QGraphicsSceneMouseEvent>

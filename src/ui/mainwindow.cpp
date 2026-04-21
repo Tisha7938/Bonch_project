@@ -1,11 +1,11 @@
-#include "../include/mainwindow.h"
+#include "mainwindow.h"
 #include <QClipboard>
 #include <QMessageBox>
 #include <QShortcut>
 #include <QStandardItemModel>
+#include <QStyle>
 #include <QToolTip>
 #include <set>
-#include <QStyle>
 #include "qspinbox.h"
 #include "ui_mainwindow.h"
 
