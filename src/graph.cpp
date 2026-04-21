@@ -1,8 +1,8 @@
 #include "../include/graph.h"
 
 Graph::Graph() :
-    amount(0), adjacent(Matrix2D(10, QList<double>(10, 0))), flow(Matrix2D(10, QList<double>(10, 0))),
-    bandwidth(Matrix2D(10, QList<double>(10, 0))) {
+    amount(0), adjacent(Matrix2D(0)), flow(Matrix2D(0)),
+    bandwidth(Matrix2D(0)) {
     graphView = new GraphWidget(&edges, &nodes, &flags);
     Edge::setFlagsPtr(&flags);
 }
