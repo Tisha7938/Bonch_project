@@ -1,37 +1,63 @@
 cmake_minimum_required(VERSION 3.16)
-project(final_project)
+project(final_project LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
-set(CMAKE_AUTOUIC_SEARCH_PATHS include src .)
+set(CMAKE_AUTOUIC_SEARCH_PATHS ${CMAKE_SOURCE_DIR}/src/ui)
 
-find_package(Qt6 COMPONENTS
-        Core
-        Gui
-        Widgets
-        REQUIRED)
+find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets)
 
-add_executable(final_project
-        src/main.cpp
-        src/edge.cpp
-        src/graph.cpp
-        src/graphwidget.cpp
-        src/mainwindow.cpp
-        src/node.cpp
-        include/edge.h
-        include/graph.h
-        include/graphenums.h
-        include/graphwidget.h
-        include/mainwindow.h
-        include/node.h
-        mainwindow.ui
+set(CORE_SOURCES
+        src/core/model/graph.cpp
+        src/core/model/node.cpp
+        src/core/model/edge.cpp
+)
+set(CORE_HEADERS
+        src/core/model/graph.h
+        src/core/model/node.h
+        src/core/model/edge.h
+        src/core/enums/graphenums.h
 )
 
-target_link_libraries(final_project
-        Qt::Core
-        Qt::Gui
-        Qt::Widgets
+set(UI_SOURCES
+        src/main.cpp
+        src/ui/mainwindow.cpp
+        src/ui/graphwidget.cpp
+)
+set(UI_HEADERS
+        src/ui/mainwindow.h
+        src/ui/graphwidget.h
+)
+set(UI_FORMS
+        src/ui/mainwindow.ui
+)
+
+set(RESOURCES
+        resources/icons
+)
+
+
+add_executable(final_project
+        ${CORE_SOURCES}
+        ${CORE_HEADERS}
+        ${UI_SOURCES}
+        ${UI_HEADERS}
+        ${UI_FORMS}
+        ${RESOURCES}
+)
+
+target_link_libraries(final_project PRIVATE
+        Qt6::Core
+        Qt6::Gui
+        Qt6::Widgets
+)
+
+target_include_directories(final_project PRIVATE
+        ${CMAKE_SOURCE_DIR}/src/core/model
+        ${CMAKE_SOURCE_DIR}/src/core/enums
+        ${CMAKE_SOURCE_DIR}/src/ui
 )

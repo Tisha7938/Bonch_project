@@ -1,7 +1,11 @@
 #pragma once
 
+#include <QList>
 #include <QMainWindow>
 #include <QMap>
+#include <QList>
+#include <QFileDialog>
+#include <QTextStream>
 #include "graph.h"
 #include "qactiongroup.h"
 #include "qpushbutton.h"
@@ -12,6 +16,14 @@
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
 QT_END_NAMESPACE
+
+// Структура для сохранения состояния графа во времени (Undo/Redo)
+struct GraphState {
+    unsigned int amount;
+    Matrix2D adj;
+    Matrix2D flow;
+    Matrix2D band;
+};
 
 class MainWindow : public QMainWindow
 {
@@ -28,11 +40,22 @@ private slots:
     void myCopy();
     void myPaste();
     void setNodesAmountMatrix(QTableView *table, int newAmount);
+    void saveToFile(); // Слот для сохранения графа в файл
 
 private:
     Ui::MainWindow *ui;
     QMap<QWidget *, QPushButton *> pins;
     QMap<QString, QWidget *> docksViewMode;
+
+           // --- Переменные и методы для работы Отмены/Повтора ---
+    QList<GraphState> undoStack;
+    int currentStateIndex = -1;
+    void saveState();
+    void restoreState(const GraphState& state);
+    // -----------------------------------------------------
+
+    // Тест прикинь
+
     void unpinTab(int index);
     void pinTab();
     void pasteClipboardToTable(QTableView *dest);

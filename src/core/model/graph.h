@@ -1,9 +1,9 @@
 #pragma once
-#include "node.h"
-#include "edge.h"
-#include "graphwidget.h"
-#include "qmap.h"
 #include <QException>
+#include "graphwidget.h"
+#include "edge.h"
+#include "node.h"
+#include "qmap.h"
 
 typedef QList<QList<double>> Matrix2D;
 
@@ -36,22 +36,21 @@ public:
     void setFlags(QFlags<GraphFlags> flags);
     void unsetFlag(GraphFlags flag);
     void toggleFlag(GraphFlags flag);
-    //void removeNode(unsigned int i);
+
     GraphWidget *graphView;
     unsigned int getAmount();
     bool unsavedChanges = false;
 
-private:
+           // --- ПЕРЕНЕСЕНО СЮДА ИЗ PRIVATE ---
     void resizeGraph(unsigned int oldAmount, unsigned int newAmount);
+
+private:
     QFlags<GraphFlags> flags;
     EdgeType getEdgeType(int i, int j, Matrix2D &matrix);
     unsigned int amount;
 
     QMap<QPair<Node*, Node*>, Edge*> edges;
     QMap<unsigned int, Node*> nodes;
-
-    //QMap<QPair<unsigned int, unsigned int>, EdgeStruct> edges;
-    //QMap<unsigned int, Node> nodes;
 
     Matrix2D adjacent;
     Matrix2D flow;
