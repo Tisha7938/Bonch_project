@@ -1,9 +1,9 @@
 #pragma once
-#include "node.h"
-#include "edge.h"
-#include "graphwidget.h"
-#include "qmap.h"
 #include <QException>
+#include "graphwidget.h"
+#include "edge.h"
+#include "node.h"
+#include "qmap.h"
 
 typedef QList<QList<double>> Matrix2D;
 

@@ -1,8 +1,8 @@
 #pragma once
 
+#include <QList>
 #include <QMainWindow>
 #include <QMap>
-#include <QList>
 #include "graph.h"
 #include "qactiongroup.h"
 #include "qpushbutton.h"
