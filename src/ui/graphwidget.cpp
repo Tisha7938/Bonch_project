@@ -15,14 +15,13 @@ GraphWidget::GraphWidget(QMap<QPair<Node *, Node *>, Edge *> *edges, QMap<unsign
     setScene(scenePtr);
 
     setCacheMode(CacheBackground);
-    setViewportUpdateMode(FullViewportUpdate); // TODO razobrat'sa cho za hren'
+    setViewportUpdateMode(FullViewportUpdate);
     setRenderHint(QPainter::Antialiasing);
     setTransformationAnchor(AnchorUnderMouse);
     scale(qreal(1), qreal(1));
     setMinimumSize(300, 200);
     setTransformationAnchor(QGraphicsView::NoAnchor);
     setMouseTracking(true);
-    //    setOptimizationFlag(QGraphicsView::DontAdjustForAntialiasing);
 }
 
 void GraphWidget::runTimer() {
@@ -41,6 +40,8 @@ void GraphWidget::initScene() {
             scene()->addItem(edge);
         }
     }
+    // ИСПРАВЛЕНИЕ 1: Запускаем таймер физики при обновлении сцены!
+    runTimer();
 }
 
 void GraphWidget::keyPressEvent(QKeyEvent *event) {
@@ -55,26 +56,24 @@ void GraphWidget::keyPressEvent(QKeyEvent *event) {
 void GraphWidget::timerEvent(QTimerEvent *event) {
     Q_UNUSED(event);
 
-    QList<Node *> nodes;
-    QList<Edge *> edges;
+    QList<Node *> localNodes;
+    QList<Edge *> localEdges;
     const QList<QGraphicsItem *> items = scene()->items();
     for (QGraphicsItem *item: items) {
         if (Node *node = qgraphicsitem_cast<Node *>(item)) {
-            nodes << node;
+            localNodes << node;
         }
         if (Edge *edge = qgraphicsitem_cast<Edge *>(item)) {
-            edges << edge;
+            localEdges << edge;
         }
     }
 
-
-    for (Node *node: nodes) {
+    for (Node *node: localNodes) {
         node->calculateForces(flags->testFlag(GraphFlags::ManualMode));
     }
 
-
     bool itemsMoved = false;
-    for (Node *node: nodes) {
+    for (Node *node: localNodes) {
         if (node->advancePosition())
             itemsMoved = true;
     }
@@ -88,9 +87,9 @@ void GraphWidget::timerEvent(QTimerEvent *event) {
 #if QT_CONFIG(wheelevent)
 void GraphWidget::wheelEvent(QWheelEvent *event) { scaleView(pow(2., -event->angleDelta().y() / 240.0)); }
 #endif
+
 void GraphWidget::mousePressEvent(QMouseEvent *event) {
     if ((event->button() == Qt::MiddleButton) && (this->dragMode() == QGraphicsView::NoDrag)) {
-        // Start dragging and save the last mouse position
         setCursor(Qt::ClosedHandCursor);
         dragging = true;
         prevScenePos = event->position();
@@ -98,27 +97,28 @@ void GraphWidget::mousePressEvent(QMouseEvent *event) {
     } else
         QGraphicsView::mousePressEvent(event);
 }
+
 void GraphWidget::mouseMoveEvent(QMouseEvent *event) {
     if (dragging) {
         QPointF diff = event->position() - prevScenePos;
         prevScenePos = event->position();
 
-        // Scroll the view accordingly
         horizontalScrollBar()->setValue(horizontalScrollBar()->value() - diff.x());
         verticalScrollBar()->setValue(verticalScrollBar()->value() - diff.y());
         event->accept();
     } else
         QGraphicsView::mouseMoveEvent(event);
 }
+
 void GraphWidget::mouseReleaseEvent(QMouseEvent *event) {
     if ((event->button() == Qt::MiddleButton)) {
         setCursor(Qt::ArrowCursor);
-        // setDragMode(NoDrag);
         dragging = false;
         event->accept();
     } else
         QGraphicsView::mouseReleaseEvent(event);
 }
+
 void GraphWidget::resizeEvent(QResizeEvent *event) {
     int w = this->width() - nodeSize, h = this->height() - nodeSize;
     scene()->setSceneRect(-w / 2, -h / 2, w, h);
@@ -135,7 +135,6 @@ void GraphWidget::scaleView(qreal scaleFactor) {
 }
 
 void GraphWidget::zoomIn() { scaleView(qreal(1.2)); }
-
 void GraphWidget::zoomOut() { scaleView(1 / qreal(1.2)); }
 
 bool isItemOnScene(QGraphicsScene *scene, QGraphicsItem *item) {

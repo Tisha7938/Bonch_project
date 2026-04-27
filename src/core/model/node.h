@@ -2,12 +2,27 @@
 
 #include <QGraphicsItem>
 #include <QList>
+#include <QSet>
+#include <QString>
 
 #define nodeSize 35
 #define strokeWidth 1
+
 class Edge;
 class GraphWidget;
+class Node;
 
+// --- Класс-контейнер с информацией об узле ---
+class NodeData {
+public:
+    NodeData() : test1(""), test2(""), test3("") {}
+
+    QString test1;
+    QString test2;
+    QString test3;
+};
+
+// --- Класс узла графа ---
 class Node : public QGraphicsItem {
 public:
     Node(int index, GraphWidget *graphWidget);
@@ -36,11 +51,12 @@ public:
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) override;
     void extracted();
     ~Node();
+
     QSet<Edge *> edgeList;
+    NodeData nodeData;
 
 protected:
     QVariant itemChange(GraphicsItemChange change, const QVariant &value) override;
-
     void mousePressEvent(QGraphicsSceneMouseEvent *event) override;
     void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) override;
 

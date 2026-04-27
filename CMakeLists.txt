@@ -48,6 +48,7 @@ add_executable(final_project
         ${UI_HEADERS}
         ${UI_FORMS}
         ${RESOURCES}
+        src/core/model/nodeinfowidget.h src/core/model/nodeinfowidget.cpp
 )
 
 target_link_libraries(final_project PRIVATE
