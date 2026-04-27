@@ -42,6 +42,38 @@ set(RESOURCES
         resources/icons
 )
 
+set(STRATEGIES_HEADERS
+        src/core/strategies/imaintenancestrategy.h
+        src/core/strategies/strategybasiccontrol.h
+        src/core/strategies/strategyinstantdetection.h
+        src/core/strategies/strategypreventivewithcontrol.h
+        src/core/strategies/strategynocontrolcheck.h
+        src/core/strategies/strategyinstantcheckdetection.h
+        src/core/strategies/strategyofflinecheck.h
+        src/core/strategies/strategyfixedintervalcontrol.h
+        src/core/strategies/strategyperiodiccontrolemergencyrecovery.h
+)
+
+set(STRATEGIES_SOURCES
+        src/core/strategies/strategybasiccontrol.cpp
+        src/core/strategies/strategyinstantdetection.cpp
+        src/core/strategies/strategypreventivewithcontrol.cpp
+        src/core/strategies/strategynocontrolcheck.cpp
+        src/core/strategies/strategyinstantcheckdetection.cpp
+        src/core/strategies/strategyofflinecheck.cpp
+        src/core/strategies/strategyfixedintervalcontrol.cpp
+        src/core/strategies/strategyperiodiccontrolemergencyrecovery.cpp
+)
+
+set(SIMULATION_HEADERS
+        src/core/simulation/neuralsystememulator.h
+        src/core/simulation/systemfromneuralmodel.h
+)
+
+set(SIMULATION_SOURCES
+        src/core/simulation/neuralsystememulator.cpp
+        src/core/simulation/systemfromneuralmodel.cpp
+)
 
 add_executable(final_project
         ${CORE_SOURCES}
@@ -50,6 +82,10 @@ add_executable(final_project
         ${UI_HEADERS}
         ${UI_FORMS}
         ${RESOURCES}
+        ${SIMULATION_HEADERS}
+        ${SIMULATION_SOURCES}
+        ${STRATEGIES_HEADERS}
+        ${STRATEGIES_SOURCES}
 )
 
 target_link_libraries(final_project PRIVATE
@@ -61,5 +97,7 @@ target_link_libraries(final_project PRIVATE
 target_include_directories(final_project PRIVATE
         ${CMAKE_SOURCE_DIR}/src/core/model
         ${CMAKE_SOURCE_DIR}/src/core/enums
+        ${CMAKE_SOURCE_DIR}/src/core/strategies
+        ${CMAKE_SOURCE_DIR}/src/core/simulation
         ${CMAKE_SOURCE_DIR}/src/ui
 )

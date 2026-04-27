@@ -55,6 +55,8 @@ private:
     void saveState();
     void restoreState(const GraphState& state);
 
+    // Тест прикинь
+
     void unpinTab(int index);
     void pinTab();
     void pasteClipboardToTable(QTableView *dest);
