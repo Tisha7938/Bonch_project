@@ -40,8 +40,6 @@ void GraphWidget::initScene() {
             scene()->addItem(edge);
         }
     }
-    // ИСПРАВЛЕНИЕ 1: Запускаем таймер физики при обновлении сцены!
-    runTimer();
 }
 
 void GraphWidget::keyPressEvent(QKeyEvent *event) {
@@ -56,24 +54,24 @@ void GraphWidget::keyPressEvent(QKeyEvent *event) {
 void GraphWidget::timerEvent(QTimerEvent *event) {
     Q_UNUSED(event);
 
-    QList<Node *> localNodes;
-    QList<Edge *> localEdges;
+    QList<Node *> nodes;
+    QList<Edge *> edges;
     const QList<QGraphicsItem *> items = scene()->items();
     for (QGraphicsItem *item: items) {
         if (Node *node = qgraphicsitem_cast<Node *>(item)) {
-            localNodes << node;
+            nodes << node;
         }
         if (Edge *edge = qgraphicsitem_cast<Edge *>(item)) {
-            localEdges << edge;
+            edges << edge;
         }
     }
 
-    for (Node *node: localNodes) {
+    for (Node *node: nodes) {
         node->calculateForces(flags->testFlag(GraphFlags::ManualMode));
     }
 
     bool itemsMoved = false;
-    for (Node *node: localNodes) {
+    for (Node *node: nodes) {
         if (node->advancePosition())
             itemsMoved = true;
     }
