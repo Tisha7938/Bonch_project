@@ -11,10 +11,10 @@ class StrategyPreventiveWithControl : public IMaintenanceStrategy {
 public:
     StrategyPreventiveWithControl(double interval = 10.0);
 
-    double detectFailure();
-    double recover();
-    bool checkMaintenance(double timeElapsed);
-    const char *name() const { return "2.1 Профилактика + встроенный контроль"; }
+    double detectFailure() override;
+    double recover() override;
+    bool checkMaintenance(double timeElapsed) override;
+    const char *name() const override { return "2.1 Профилактика + встроенный контроль"; }
 
     void setMaintenanceInterval(double interval);
     double getMaintenanceInterval() const;
