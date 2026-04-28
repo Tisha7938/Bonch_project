@@ -15,11 +15,13 @@ set(CORE_SOURCES
         src/core/model/graph.cpp
         src/core/model/node.cpp
         src/core/model/edge.cpp
+        src/core/model/nodeinfowidget.cpp
 )
 set(CORE_HEADERS
         src/core/model/graph.h
         src/core/model/node.h
         src/core/model/edge.h
+        src/core/model/nodeinfowidget.h
         src/core/enums/graphenums.h
 )
 

@@ -20,8 +20,7 @@ Graph::Graph(Matrix2D &matrix) :
         nodes[i] = new Node(i, graphView);
     }
 
-
-    // create edges with edge type definition
+           // create edges with edge type definition
     for (unsigned int i = 0; i != amount; i++) {
         for (unsigned int j = i; j != amount; j++) {
             if (i != j) {
@@ -59,11 +58,8 @@ Graph::~Graph() {
     }
 }
 
-
 const Matrix2D Graph::getMatrixAdjacent() { return adjacent; }
-
 const Matrix2D Graph::getMatrixFlow() { return flow; }
-
 const Matrix2D Graph::getMatrixBandwidth() { return bandwidth; }
 
 const QList<QVariantList> Graph::getListEdges() {
@@ -76,7 +72,6 @@ const QList<QVariantList> Graph::getListEdges() {
     }
     return edgeList;
 }
-
 
 void Graph::setMatrixAdjacent(Matrix2D &matrix) {
     unsigned int i, j;
@@ -345,21 +340,12 @@ void Graph::addNode(unsigned int i) {
 
 const QFlags<GraphFlags> Graph::getFlags() { return flags; }
 
-void Graph::setFlag(GraphFlags flag) { flags |= flag; }
-
-void Graph::setFlags(QFlags<GraphFlags> flags) { this->flags = flags; }
-
-void Graph::unsetFlag(GraphFlags flag) { this->flags &= (~flag); }
-
-void Graph::toggleFlag(GraphFlags flag) { this->flags ^= flag; }
-
 unsigned int Graph::getAmount() { return this->amount; }
 
 void Graph::resizeGraph(unsigned int oldAmount, unsigned int newAmount) {
     unsigned int i, j;
     bool newAmountIsLess = oldAmount > newAmount;
     bool needResize = amount != newAmount;
-    // increase nodes amount
     if (needResize) {
         amount = newAmount;
         adjacent.resize(newAmount);
@@ -391,4 +377,21 @@ void Graph::resizeGraph(unsigned int oldAmount, unsigned int newAmount) {
                 nodes[i] = new Node(i, graphView);
             }
     }
+}
+
+// ИСПРАВЛЕНИЕ 2: Безопасное использование флагов QFlags для Qt 6
+void Graph::setFlag(GraphFlags flag) {
+    this->flags.setFlag(flag, true);
+}
+
+void Graph::setFlags(QFlags<GraphFlags> flags) {
+    this->flags = flags;
+}
+
+void Graph::unsetFlag(GraphFlags flag) {
+    this->flags.setFlag(flag, false);
+}
+
+void Graph::toggleFlag(GraphFlags flag) {
+    this->flags.setFlag(flag, !this->flags.testFlag(flag));
 }

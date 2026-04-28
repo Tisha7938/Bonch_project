@@ -11,14 +11,32 @@
 #include "qspinbox.h"
 #include "ui_mainwindow.h"
 
+// Подключаем наши классы
+#include "node.h"
+#include "nodeinfowidget.h"
+
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow) {
     ui->setupUi(this);
 
-    // --- Настройка вкладок ---
+           // =========================================================
+           // СОЗДАЕМ DOCK WIDGET ДЛЯ БОКОВОЙ ПАНЕЛИ
+           // =========================================================
+    dock_NodeInfo = new QDockWidget("Node Settings", this);
+    dock_NodeInfo->setObjectName("dock_NodeInfo");
+    dock_NodeInfo->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
+
+    nodeSidebar = new NodeInfoWidget(this);
+    dock_NodeInfo->setWidget(nodeSidebar);
+
+    this->addDockWidget(Qt::RightDockWidgetArea, dock_NodeInfo);
+    dock_NodeInfo->hide();
+    // =========================================================
+
+           // --- Настройка вкладок ---
     this->setDockOptions(this->dockOptions() & ~QMainWindow::VerticalTabs);
     this->setTabPosition(Qt::AllDockWidgetAreas, QTabWidget::North);
 
-    // --- Иконки и Подсказки ---
+           // --- Иконки и Подсказки ---
     ui->actionUndo->setIcon(style()->standardIcon(QStyle::SP_ArrowBack));
     ui->actionUndo->setToolTip("Отменить последнее действие (Ctrl+Z)");
 
@@ -182,8 +200,15 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             if (dock != dockStack) {
                 auto act = new QAction(dock->windowTitle());
                 act->setCheckable(true);
-                act->setChecked(true);
-                this->tabifyDockWidget(dockStack, dock);
+
+                // Скрываем чекбокс NodeInfo по умолчанию
+                if(dock->objectName() == "dock_NodeInfo") {
+                    act->setChecked(false);
+                } else {
+                    act->setChecked(true);
+                    this->tabifyDockWidget(dockStack, dock);
+                }
+
                 if (!dockTop)
                     dockTop = dock;
                 docksViewMode.insert(dock->windowTitle(), dock);
@@ -202,6 +227,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
     ui->centralwidget->layout()->removeWidget(ui->graphView);
     ui->centralwidget->layout()->addWidget(graph.graphView);
+
     connect(ui->actionCopy, &QAction::triggered, this, std::bind(&MainWindow::myCopy, this));
     connect(ui->actionPaste, &QAction::triggered, this, std::bind(&MainWindow::myPaste, this));
     connect(ui->actionRefreshTables, &QAction::triggered, this, std::bind(&MainWindow::updateTables, this));
