@@ -1,7 +1,7 @@
 #pragma once
 #include <QException>
-#include "graphwidget.h"
 #include "edge.h"
+#include "graphwidget.h"
 #include "node.h"
 #include "qmap.h"
 
@@ -36,6 +36,9 @@ public:
     void setFlags(QFlags<GraphFlags> flags);
     void unsetFlag(GraphFlags flag);
     void toggleFlag(GraphFlags flag);
+
+    //! @brief Получить доступ к карте узлов (только для чтения)
+    const QMap<unsigned int, Node *> &getNodes() const { return nodes; }
 
     GraphWidget *graphView;
     unsigned int getAmount();

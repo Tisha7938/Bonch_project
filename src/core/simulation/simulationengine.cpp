@@ -1,6 +1,7 @@
 #include "simulationengine.h"
 #include <algorithm>
 #include <random>
+#include "logger.h"
 
 SimulationEngine::SimulationEngine(double dt, const std::string &distMode) :
     m_dt(dt), m_currentTime(0.0), m_running(false), m_totalRuntime(0.0), m_totalDowntime(0.0), m_emulator(distMode) {}
@@ -10,6 +11,7 @@ void SimulationEngine::setNodes(const std::vector<std::shared_ptr<NodeModel>> &n
     for (const auto &node: m_nodes) {
         m_nodeStats[node->id()] = NodeStats{};
     }
+    Logger::info(QString("Инициализировано %1 узлов").arg(nodes.size()));
 }
 
 void SimulationEngine::start() {
@@ -27,6 +29,7 @@ void SimulationEngine::reset() {
     m_totalRuntime = 0.0;
     m_totalDowntime = 0.0;
     m_nodeStats.clear();
+    m_maintenanceEndTimes.clear();
     for (const auto &node: m_nodes) {
         node->setState(NodeModel::State::Operational);
         node->setReliability(1.0);
@@ -77,6 +80,9 @@ void SimulationEngine::step() {
     m_bus.flush();
 
     m_currentTime += m_dt;
+
+    Logger::step(m_currentTime, getGlobalAvailability());
+
     if (m_stepCallback) {
         m_stepCallback();
     }
@@ -102,21 +108,29 @@ void SimulationEngine::processNode(NodeModel &node) {
         if (state == NodeModel::State::Failed) {
             handleRecovery(node);
         }
+        else if (state == NodeModel::State::Maintenance) {
+            auto it = m_maintenanceEndTimes.find(node.id());
+            if (it != m_maintenanceEndTimes.end() && m_currentTime >= it->second) {
+                node.setState(NodeModel::State::Operational);
+                node.setReliability(1.0); // После профилактики надежность восстанавливается полностью
+                m_bus.sendTo(node.id(), "MAINT_COMPLETE");
+                if (m_eventCallback) m_eventCallback(node.id(), "MAINT_COMPLETE");
+                m_maintenanceEndTimes.erase(it);
+            }
+        }
         return;
     }
 
     if (strategy->checkMaintenance(m_currentTime)) {
+        double maintDuration = m_emulator.sampleMaintenanceTime();
+        m_maintenanceEndTimes[node.id()] = m_currentTime + maintDuration;
+
         node.setState(NodeModel::State::Maintenance);
         auto &stats = m_nodeStats[node.id()];
         stats.maintenanceCount++;
 
-        const double mainTime = m_emulator.sampleMaintenanceTime();
-        m_totalDowntime += std::min(mainTime, m_dt);
-
         m_bus.sendTo(node.id(), "MAINT_START");
-        if (m_eventCallback) {
-            m_eventCallback(node.id(), "MAINTENANCE");
-        }
+        if (m_eventCallback) m_eventCallback(node.id(), "MAINTENANCE");
         return;
     }
 

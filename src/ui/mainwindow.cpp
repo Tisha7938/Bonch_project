@@ -6,10 +6,18 @@
 #include <QStandardItemModel>
 #include <QStyle>
 #include <QTextStream>
+#include <QTimer>
 #include <QToolTip>
-#include <set>
 #include "qspinbox.h"
 #include "ui_mainwindow.h"
+
+#include "logger.h"
+#include "nodemodel.h"
+#include "simulationengine.h"
+#include "strategybasiccontrol.h"
+#include "strategyfixedintervalcontrol.h"
+#include "strategyinstantdetection.h"
+#include "strategypreventivewithcontrol.h"
 
 // Подключаем наши классы
 #include "node.h"
@@ -18,9 +26,9 @@
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow) {
     ui->setupUi(this);
 
-           // =========================================================
-           // СОЗДАЕМ DOCK WIDGET ДЛЯ БОКОВОЙ ПАНЕЛИ
-           // =========================================================
+    // =========================================================
+    // СОЗДАЕМ DOCK WIDGET ДЛЯ БОКОВОЙ ПАНЕЛИ
+    // =========================================================
     dock_NodeInfo = new QDockWidget("Node Settings", this);
     dock_NodeInfo->setObjectName("dock_NodeInfo");
     dock_NodeInfo->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
@@ -32,11 +40,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     dock_NodeInfo->hide();
     // =========================================================
 
-           // --- Настройка вкладок ---
+    // --- Настройка вкладок ---
     this->setDockOptions(this->dockOptions() & ~QMainWindow::VerticalTabs);
     this->setTabPosition(Qt::AllDockWidgetAreas, QTabWidget::North);
 
-           // --- Иконки и Подсказки ---
+    // --- Иконки и Подсказки ---
     ui->actionUndo->setIcon(style()->standardIcon(QStyle::SP_ArrowBack));
     ui->actionUndo->setToolTip("Отменить последнее действие (Ctrl+Z)");
 
@@ -53,7 +61,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     ui->actionPaste->setToolTip("Вставить данные из буфера");
 
     ui->actionLaunchAlg->setIcon(style()->standardIcon(QStyle::SP_MediaPlay));
-    ui->actionLaunchAlg->setToolTip("Запустить расчет алгоритма");
+    ui->actionLaunchAlg->setToolTip("Запустить моделирование");
 
     ui->actionDeleteGraph->setIcon(style()->standardIcon(QStyle::SP_TrashIcon));
     ui->actionDeleteGraph->setToolTip("Полностью удалить граф");
@@ -123,11 +131,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     });
 
     connect(ui->actionLaunchAlg, &QAction::triggered, this, [this]() {
-        ui->textEdit_Console->appendPlainText("\n=== АНАЛИЗ ГРАФА ===");
-        auto edgesList = graph.getListEdges();
-        ui->textEdit_Console->appendPlainText("Узлов: " + QString::number(graph.getAmount()));
-        ui->textEdit_Console->appendPlainText("Ребер: " + QString::number(edgesList.size()));
-        ui->textEdit_Console->appendPlainText("====================\n");
+        if (m_simulation && m_simulation->isRunning()) {
+            onSimulationStop();
+        } else {
+            onSimulationStart();
+        }
     });
 
     auto spinBoxes = this->findChildren<QSpinBox *>();
@@ -202,7 +210,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                 act->setCheckable(true);
 
                 // Скрываем чекбокс NodeInfo по умолчанию
-                if(dock->objectName() == "dock_NodeInfo") {
+                if (dock->objectName() == "dock_NodeInfo") {
                     act->setChecked(false);
                 } else {
                     act->setChecked(true);
@@ -248,6 +256,22 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     });
     ui->actionAutomatic->setChecked(true);
     saveState();
+
+    m_simTimer = new QTimer(this);
+    m_simTimer->setInterval(100);
+
+    connect(m_simTimer, &QTimer::timeout, this, [this]() {
+        if (m_simulation && m_simulation->isRunning()) {
+            m_simulation->step();
+            for (auto *item: graph.graphView->scene()->items()) {
+                if (auto *node = qgraphicsitem_cast<Node *>(item)) {
+                    node->update();
+                }
+            }
+        }
+    });
+
+    initializeSimulationModels();
 }
 
 MainWindow::~MainWindow() {
@@ -452,6 +476,88 @@ void MainWindow::myCopy() {
 void MainWindow::myPaste() {
     if (auto *t = qobject_cast<QTableView *>(focusWidget()))
         pasteClipboardToTable(t);
+}
+
+void MainWindow::initializeSimulationModels() {
+    Logger::info("Инициализация моделей для симуляции");
+
+    if (graph.getAmount() == 0) {
+        Logger::info("Граф пуст. Добавьте узлы перед запуском симуляции.");
+        ui->textEdit_Console->appendPlainText("⚠ Сначала добавьте узлы (кнопка + или N)");
+        return;
+    }
+
+    m_nodeModels.clear();
+
+    const auto &nodesMap = graph.getNodes();
+    for (auto it = nodesMap.constBegin(); it != nodesMap.constEnd(); ++it) {
+        unsigned int id = it.key();
+        Node *qtNode = it.value();
+
+        auto model = std::make_shared<NodeModel>(id);
+
+        // циклически для демонстрации
+        switch (id % 4) {
+            case 0:
+                model->setStrategy(std::make_unique<StrategyBasicControl>());
+                break;
+            case 1:
+                model->setStrategy(std::make_unique<StrategyInstantDetection>());
+                break;
+            case 2:
+                model->setStrategy(std::make_unique<StrategyPreventiveWithControl>(10.0));
+                break;
+            case 3:
+                model->setStrategy(std::make_unique<StrategyFixedIntervalControl>(8.0));
+                break;
+        }
+
+        m_nodeModels.push_back(model);
+        qtNode->bindModel(model.get());
+
+        Logger::info(
+                QString("Node-%1: стратегия %2").arg(id).arg(model->strategy() ? model->strategy()->name() : "None"));
+    }
+
+    m_simulation = std::make_unique<SimulationEngine>(0.1, "exponential");
+    m_simulation->setNodes(m_nodeModels);
+
+    m_simulation->setEventCallback([this](unsigned int nodeId, const std::string &event) {
+        Logger::event(nodeId, QString::fromStdString(event));
+    });
+
+    Logger::info(QString("Готово: %1 узлов привязано").arg(m_nodeModels.size()));
+}
+
+void MainWindow::onSimulationStart() {
+    if (m_simulation && m_simulation->isRunning()) {
+        Logger::info("Симуляция уже запущена.");
+        return;
+    }
+
+    if (!m_simulation || m_nodeModels.empty() || graph.getAmount() != m_nodeModels.size()) {
+        initializeSimulationModels();
+        if (!m_simulation)
+            return;
+    }
+
+    Logger::info("Запуск имитационного моделирования");
+    m_simulation->start();
+    m_simTimer->start();
+    ui->textEdit_Console->appendPlainText("Симуляция запущена");
+}
+
+void MainWindow::onSimulationStop() {
+    if (m_simulation) {
+        m_simulation->stop();
+        m_simTimer->stop();
+
+        double avail = m_simulation->getGlobalAvailability();
+        Logger::info(QString("Симуляция остановлена. Kг = %1").arg(avail, 0, 'f', 4));
+
+        ui->textEdit_Console->appendPlainText(
+                QString("Симуляция остановлена. Коэффициент готовности: %1").arg(avail, 0, 'f', 4));
+    }
 }
 
 template<typename T>

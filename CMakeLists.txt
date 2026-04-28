@@ -12,19 +12,10 @@ set(CMAKE_AUTOUIC_SEARCH_PATHS ${CMAKE_SOURCE_DIR}/src/ui)
 find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets)
 
 set(CORE_SOURCES
-        src/core/model/graph.cpp
-        src/core/model/node.cpp
-        src/core/model/edge.cpp
         src/core/model/messagebus.cpp
         src/core/model/nodemodel.cpp
-        src/core/model/nodeinfowidget.cpp
 )
 set(CORE_HEADERS
-        src/core/model/graph.h
-        src/core/model/node.h
-        src/core/model/edge.h
-        src/core/model/nodeinfowidget.h
-        src/core/enums/graphenums.h
         src/core/model/messagebus.h
         src/core/model/nodemodel.h
 )
@@ -33,10 +24,19 @@ set(UI_SOURCES
         src/main.cpp
         src/ui/mainwindow.cpp
         src/ui/graphwidget.cpp
+        src/ui/graph.cpp
+        src/ui/node.cpp
+        src/ui/edge.cpp
+        src/ui/nodeinfowidget.cpp
 )
 set(UI_HEADERS
         src/ui/mainwindow.h
         src/ui/graphwidget.h
+        src/ui/graph.h
+        src/ui/node.h
+        src/ui/edge.h
+        src/ui/nodeinfowidget.h
+        src/core/enums/graphenums.h
 )
 set(UI_FORMS
         src/ui/mainwindow.ui
@@ -81,6 +81,8 @@ set(SIMULATION_SOURCES
         src/core/simulation/simulationengine.cpp
 )
 
+set(UTILS_HEADERS src/utils/logger.h)
+
 add_executable(final_project
         ${CORE_SOURCES}
         ${CORE_HEADERS}
@@ -92,6 +94,7 @@ add_executable(final_project
         ${SIMULATION_SOURCES}
         ${STRATEGIES_HEADERS}
         ${STRATEGIES_SOURCES}
+        ${UTILS_HEADERS}
 )
 
 target_link_libraries(final_project PRIVATE
@@ -106,4 +109,5 @@ target_include_directories(final_project PRIVATE
         ${CMAKE_SOURCE_DIR}/src/core/strategies
         ${CMAKE_SOURCE_DIR}/src/core/simulation
         ${CMAKE_SOURCE_DIR}/src/ui
+        ${CMAKE_SOURCE_DIR}/src/utils
 )
