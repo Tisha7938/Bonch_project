@@ -17,11 +17,13 @@ set(CORE_SOURCES
         src/core/model/edge.cpp
         src/core/model/messagebus.cpp
         src/core/model/nodemodel.cpp
+        src/core/model/nodeinfowidget.cpp
 )
 set(CORE_HEADERS
         src/core/model/graph.h
         src/core/model/node.h
         src/core/model/edge.h
+        src/core/model/nodeinfowidget.h
         src/core/enums/graphenums.h
         src/core/model/messagebus.h
         src/core/model/nodemodel.h
