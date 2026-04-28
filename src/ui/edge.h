@@ -1,6 +1,6 @@
 #pragma once
 #include <QGraphicsItem>
-#include "../enums/graphenums.h"
+#include "../core/enums/graphenums.h"
 #define txtOffset 15
 #define curvines 25
 class Node;

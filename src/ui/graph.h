@@ -1,7 +1,7 @@
 #pragma once
 #include <QException>
-#include "graphwidget.h"
 #include "edge.h"
+#include "graphwidget.h"
 #include "node.h"
 #include "qmap.h"
 

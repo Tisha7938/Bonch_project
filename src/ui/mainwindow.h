@@ -1,12 +1,11 @@
 #pragma once
 
+#include <QDockWidget>
+#include <QFileDialog>
 #include <QList>
 #include <QMainWindow>
 #include <QMap>
-#include <QList>
-#include <QFileDialog>
 #include <QTextStream>
-#include <QDockWidget>
 #include "graph.h"
 #include "qactiongroup.h"
 #include "qpushbutton.h"

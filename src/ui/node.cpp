@@ -1,16 +1,15 @@
 #include "node.h"
-#include "graphwidget.h"
 #include "edge.h"
+#include "graphwidget.h"
 #include "nodeinfowidget.h"
 
+#include <QAction>
+#include <QDockWidget>
 #include <QGraphicsScene>
 #include <QGraphicsSceneMouseEvent>
 #include <QPainter>
 #include <QRandomGenerator>
 #include <QStyleOption>
-#include <QMainWindow>
-#include <QDockWidget>
-#include <QAction>
 
 Node::Node(int index, GraphWidget *graphWidget) : graph(graphWidget) {
     this->index = index;
