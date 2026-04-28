@@ -81,9 +81,7 @@ set(SIMULATION_SOURCES
         src/core/simulation/simulationengine.cpp
 )
 
-set(UTILS
-    src/utils/logger.h
-)
+set(UTILS_HEADERS src/utils/logger.h)
 
 add_executable(final_project
         ${CORE_SOURCES}
@@ -96,7 +94,7 @@ add_executable(final_project
         ${SIMULATION_SOURCES}
         ${STRATEGIES_HEADERS}
         ${STRATEGIES_SOURCES}
-        ${UTILS}
+        ${UTILS_HEADERS}
 )
 
 target_link_libraries(final_project PRIVATE
