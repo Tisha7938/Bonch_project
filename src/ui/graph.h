@@ -37,6 +37,9 @@ public:
     void unsetFlag(GraphFlags flag);
     void toggleFlag(GraphFlags flag);
 
+    //! @brief Получить доступ к карте узлов (только для чтения)
+    const QMap<unsigned int, Node *> &getNodes() const { return nodes; }
+
     GraphWidget *graphView;
     unsigned int getAmount();
     bool unsavedChanges = false;

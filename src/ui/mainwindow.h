@@ -12,6 +12,7 @@
 #include "qshortcut.h"
 #include "qspinbox.h"
 #include "qtableview.h"
+#include "simulationengine.h"
 
 // Форвард-декларация
 class NodeInfoWidget;
@@ -43,6 +44,8 @@ private slots:
     void myPaste();
     void setNodesAmountMatrix(QTableView *table, int newAmount);
     void saveToFile();
+    void onSimulationStart();
+    void onSimulationStop();
 
 private:
     Ui::MainWindow *ui;
@@ -54,8 +57,6 @@ private:
     void saveState();
     void restoreState(const GraphState& state);
 
-    // Тест прикинь
-
     void unpinTab(int index);
     void pinTab();
     void pasteClipboardToTable(QTableView *dest);
@@ -64,6 +65,8 @@ private:
     void applyEdgesList(QTableView *table);
     void updateEdgesList(QTableView *list);
     void updateTables();
+
+    void initializeSimulationModels();
 
     template<typename T>
     void setTableFromMatrix(QTableView *table, T &matrix, int height = -1, int width = -1);
@@ -76,4 +79,8 @@ private:
            // --- Указатели для новой боковой панели ---
     QDockWidget *dock_NodeInfo;
     NodeInfoWidget *nodeSidebar;
+
+    QTimer* m_simTimer = nullptr;
+    std::unique_ptr<SimulationEngine> m_simulation;
+    std::vector<std::shared_ptr<NodeModel>> m_nodeModels;
 };

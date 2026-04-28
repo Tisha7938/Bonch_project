@@ -118,10 +118,29 @@ QPainterPath Node::shape() const {
 
 int Node::getIndex() { return this->index; }
 void Node::setIndex(unsigned int num) { this->index = num; }
+void Node::bindModel(NodeModel *model) {
+    m_model = model;
+    update();
+}
 
 void Node::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *) {
-    painter->fillPath(shape(), QBrush(Qt::white));
-    painter->setPen(QPen(Qt::black, 2));
+    QColor fillColor = Qt::white;
+    if (m_model) {
+        switch (m_model->state()) {
+            case NodeModel::State::Operational:
+                fillColor = QColor(144, 238, 144);
+                break;
+            case NodeModel::State::Failed:
+                fillColor = QColor(255, 99, 71);
+                break;
+            case NodeModel::State::Maintenance:
+                fillColor = QColor(255, 215, 0);
+                break;
+        }
+    }
+
+    painter->fillPath(shape(), QBrush(fillColor));
+    painter->setPen(QPen(Qt::black, strokeWidth));
     painter->drawPath(shape());
 
     QFont font = painter->font();

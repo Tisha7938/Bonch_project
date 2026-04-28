@@ -4,6 +4,7 @@
 #include <QList>
 #include <QSet>
 #include <QString>
+#include "nodemodel.h"
 
 #define nodeSize 35
 #define strokeWidth 1
@@ -47,6 +48,12 @@ public:
     int getIndex();
     void setIndex(unsigned int);
 
+    //! @brief Привязать чистую модель к графическому элементу
+    void bindModel(NodeModel *model);
+
+    //! @brief Получить привязанную модель
+    NodeModel *model() const { return m_model; }
+
     Node &operator=(const Node &);
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) override;
     void extracted();
@@ -67,4 +74,6 @@ private:
     QPointF newPos;
     GraphWidget *graph;
     int index;
+
+    NodeModel *m_model = nullptr;
 };

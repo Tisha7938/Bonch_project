@@ -6,6 +6,8 @@
 #include "messagebus.h"
 #include "neuralsystememulator.h"
 #include "nodemodel.h"
+#include <map>
+
 
 //! @brief Двигатель имитационного моделирования надёжности сети
 //!
@@ -79,6 +81,7 @@ private:
         int maintenanceCount = 0;
     };
     std::map<unsigned int, NodeStats> m_nodeStats;
+    std::map<unsigned int, double> m_maintenanceEndTimes;
 
     StepCallback m_stepCallback;
     EventCallback m_eventCallback;

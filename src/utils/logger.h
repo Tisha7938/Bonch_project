@@ -1,51 +1,36 @@
 #pragma once
 #include <QDateTime>
 #include <QDebug>
-#include <QFile>
-#include <QTextStream>
+#include <QString>
 #include <mutex>
 
-//! @brief Утилитарный логгер для имитационного моделирования
-//! Выводит сообщения в консоль (qDebug) и опционально в текстовый файл(мейби на будущее).
+//! @brief Лёгкий потокобезопасный логгер для имитационного моделирования
 class Logger {
 public:
-    //! @brief Получить синглтон
-    static Logger &instance() {
-        static Logger inst;
-        return inst;
+    static void info(const QString &msg) {
+        std::lock_guard<std::mutex> lock(mutex());
+        qDebug().noquote()
+                << QString("[INFO] [%1] %2").arg(QDateTime::currentDateTime().toString("hh:mm:ss.zzz")).arg(msg);
     }
 
-    //! @brief Записать лог
-    //! @param msg Текст сообщения
-    //! @param level Уровень лога (INFO, EVENT, WARN, STEP)
-    void log(const QString &msg, const QString &level = "INFO") {
-        std::lock_guard<std::mutex> lock(m_mutex);
-        QString line =
-                QString("[%1] [%2] %3").arg(QDateTime::currentDateTime().toString("hh:mm:ss.zzz")).arg(level).arg(msg);
-        qDebug().noquote() << line;
-        if (m_file.isOpen()) {
-            m_stream << line << Qt::endl;
-        }
+    static void event(unsigned int nodeId, const QString &type) {
+        std::lock_guard<std::mutex> lock(mutex());
+        qDebug().noquote() << QString("[EVENT] [%1] Node-%2: %3")
+                                      .arg(QDateTime::currentDateTime().toString("hh:mm:ss.zzz"))
+                                      .arg(nodeId)
+                                      .arg(type);
     }
 
-    //! @brief Открыть файл для записи логов
-    void openFile(const QString &path) {
-        m_file.setFileName(path);
-        if (m_file.open(QIODevice::WriteOnly | QIODevice::Append)) {
-            m_stream.setDevice(&m_file);
-        }
+    static void step(double time, double availability) {
+        std::lock_guard<std::mutex> lock(mutex());
+        qDebug().noquote()
+                << QString("[STEP] T=%1 | Availability=%2").arg(time, 0, 'f', 1).arg(availability, 0, 'f', 3);
     }
 
-    //! @brief Закрыть файл логов
-    void close() {
-        std::lock_guard<std::mutex> lock(m_mutex);
-        if (m_file.isOpen())
-            m_file.close();
-    }
 
 private:
-    Logger() = default;
-    QFile m_file;
-    QTextStream m_stream;
-    std::mutex m_mutex;
+    static std::mutex &mutex() {
+        static std::mutex m;
+        return m;
+    }
 };
