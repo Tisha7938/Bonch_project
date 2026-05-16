@@ -37,8 +37,22 @@ double NeuralSystemEmulator::generateFromDistribution(Distribution dist, double 
             return d(m_gen);
         }
         case Distribution::Normal: {
-            std::normal_distribution<double> d(normMean, normStd);
-            return std::max(0.0, d(m_gen));
+            double u1, u2;
+
+            //фикс -бесконечность
+            do {
+                u1 = m_uniform(m_gen);
+            } while (u1 <= 0.0);
+
+            u2 = m_uniform(m_gen);
+
+            const double PI = 3.14159265358979323846;
+
+            double z0 = std::sqrt(-2.0 * std::log(u1)) * std::cos(2.0 * PI * u2);
+
+            double result = normMean + z0 * normStd;
+
+            return std::max(0.0, result);
         }
         default:
             throw std::runtime_error("Unknown distribution type");
