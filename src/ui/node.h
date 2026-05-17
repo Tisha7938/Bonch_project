@@ -6,7 +6,7 @@
 #include <QString>
 #include "nodemodel.h"
 
-#define nodeSize 35
+#define nodeSize 44
 #define strokeWidth 1
 
 class Edge;

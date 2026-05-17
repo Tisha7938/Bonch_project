@@ -15,9 +15,8 @@
 #include "nodemodel.h"
 #include "simulationengine.h"
 #include "strategybasiccontrol.h"
-#include "strategyfixedintervalcontrol.h"
-#include "strategyinstantdetection.h"
-#include "strategypreventivewithcontrol.h"
+#include "strategynocontrolcheck.h"
+#include "strategyofflinecheck.h"
 
 // Подключаем наши классы
 #include "node.h"
@@ -25,6 +24,14 @@
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow) {
     ui->setupUi(this);
+    setStyleSheet(
+            "QMainWindow { background: #f1f5f9; }"
+            "QToolBar { background: #ffffff; border: none; spacing: 6px; padding: 6px; }"
+            "QDockWidget::title { background: #e2e8f0; color: #0f172a; padding: 6px; border: 1px solid #cbd5e1; }"
+            "QTableView { background: #ffffff; border: 1px solid #cbd5e1; gridline-color: #e2e8f0; selection-background-color: #dbeafe; }"
+            "QHeaderView::section { background: #f8fafc; color: #334155; border: 1px solid #e2e8f0; padding: 4px; font-weight: 600; }"
+            "QPushButton { background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 4px 10px; }"
+            "QPushButton:hover { background: #f1f5f9; }");
 
     // =========================================================
     // СОЗДАЕМ DOCK WIDGET ДЛЯ БОКОВОЙ ПАНЕЛИ
@@ -38,6 +45,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
     this->addDockWidget(Qt::RightDockWidgetArea, dock_NodeInfo);
     dock_NodeInfo->hide();
+    statusBar()->showMessage("Graph editor ready");
     // =========================================================
 
     // --- Настройка вкладок ---
@@ -84,6 +92,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         saveState();
         int newAmount = graph.getAmount() + 1;
         graph.resizeGraph(graph.getAmount(), newAmount);
+        initializeSimulationModels();
         graph.graphView->initScene();
         updateTables();
         ui->textEdit_Console->appendPlainText("Добавлен узел. Всего: " + QString::number(newAmount));
@@ -94,6 +103,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             saveState();
             int newAmount = graph.getAmount() - 1;
             graph.resizeGraph(graph.getAmount(), newAmount);
+            initializeSimulationModels();
             graph.graphView->scene()->update();
             updateTables();
             ui->textEdit_Console->appendPlainText("Узел удален. Осталось: " + QString::number(newAmount));
@@ -103,6 +113,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     connect(ui->actionDeleteGraph, &QAction::triggered, this, [this]() {
         saveState();
         graph.resizeGraph(graph.getAmount(), 0);
+        initializeSimulationModels();
         graph.graphView->scene()->update();
         updateTables();
         ui->textEdit_Console->appendPlainText("Граф полностью очищен.");
@@ -330,6 +341,7 @@ void MainWindow::restoreState(const GraphState &state) {
     graph.setMatrixAdjacent(const_cast<Matrix2D &>(state.adj));
     graph.setMatrixFlow(const_cast<Matrix2D &>(state.flow));
     graph.setMatrixBandwidth(const_cast<Matrix2D &>(state.band));
+    initializeSimulationModels();
     graph.graphView->initScene();
     updateTables();
 }
@@ -497,18 +509,15 @@ void MainWindow::initializeSimulationModels() {
         auto model = std::make_shared<NodeModel>(id);
 
         // циклически для демонстрации
-        switch (id % 4) {
+        switch (id % 3) {
             case 0:
                 model->setStrategy(std::make_unique<StrategyBasicControl>());
                 break;
             case 1:
-                model->setStrategy(std::make_unique<StrategyInstantDetection>());
+                model->setStrategy(std::make_unique<StrategyNoControlCheck>());
                 break;
-            case 2:
-                model->setStrategy(std::make_unique<StrategyPreventiveWithControl>(10.0));
-                break;
-            case 3:
-                model->setStrategy(std::make_unique<StrategyFixedIntervalControl>(8.0));
+            default:
+                model->setStrategy(std::make_unique<StrategyOfflineCheck>());
                 break;
         }
 
