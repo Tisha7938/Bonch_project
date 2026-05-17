@@ -13,6 +13,7 @@
 #include "qspinbox.h"
 #include "qtableview.h"
 #include "simulationengine.h"
+#include "reliabilitywidget.h"
 
 // Форвард-декларация
 class NodeInfoWidget;
@@ -83,4 +84,7 @@ private:
     QTimer* m_simTimer = nullptr;
     std::unique_ptr<SimulationEngine> m_simulation;
     std::vector<std::shared_ptr<NodeModel>> m_nodeModels;
+
+    ReliabilityWidget* m_reliabilityWidget;
+    QDockWidget* dock_Reliability;
 };
