@@ -114,9 +114,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     connect(ui->actionClearConsole, &QAction::triggered, this, &MainWindow::buttonClearConsoleClicked);
 
     connect(ui->actionUndo, &QAction::triggered, this, [this]() {
-        if (currentStateIndex > 0) {
-            currentStateIndex--;
-            restoreState(undoStack[currentStateIndex]);
+        if (!undoStack.empty()) {
+            redoStack.append(captureState());
+            restoreState(undoStack.takeLast());
             ui->textEdit_Console->appendPlainText("<- Undo");
         } else {
             ui->textEdit_Console->appendPlainText("Нечего отменять.");
@@ -124,9 +124,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     });
 
     connect(ui->actionRedo, &QAction::triggered, this, [this]() {
-        if (currentStateIndex < undoStack.size() - 1) {
-            currentStateIndex++;
-            restoreState(undoStack[currentStateIndex]);
+        if (!redoStack.empty()) {
+            undoStack.append(captureState());
+            restoreState(redoStack.takeLast());
             ui->textEdit_Console->appendPlainText("-> Redo");
         } else {
             ui->textEdit_Console->appendPlainText("Нечего повторять.");
@@ -252,7 +252,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         }
     });
     ui->actionAutomatic->setChecked(true);
-    saveState();
 
     m_simTimer = new QTimer(this);
     m_simTimer->setInterval(100);
@@ -308,16 +307,18 @@ void MainWindow::saveToFile() {
     ui->textEdit_Console->appendPlainText("Граф успешно сохранен в: " + fileName);
 }
 
-void MainWindow::saveState() {
-    while (undoStack.size() > currentStateIndex + 1)
-        undoStack.removeLast();
+GraphState MainWindow::captureState() {
     GraphState s;
     s.amount = graph.getAmount();
     s.adj = graph.getMatrixAdjacent();
     s.flow = graph.getMatrixFlow();
     s.band = graph.getMatrixBandwidth();
-    undoStack.append(s);
-    currentStateIndex++;
+    return s;
+}
+
+void MainWindow::saveState() {
+    undoStack.append(captureState());
+    redoStack.clear();
 }
 
 void MainWindow::restoreState(const GraphState &state) {

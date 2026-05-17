@@ -53,7 +53,8 @@ private:
     QMap<QString, QWidget *> docksViewMode;
 
     QList<GraphState> undoStack;
-    int currentStateIndex = -1;
+    QList<GraphState> redoStack;
+    GraphState captureState();
     void saveState();
     void restoreState(const GraphState& state);
     void setUndoRedoEnabled(bool enabled);
