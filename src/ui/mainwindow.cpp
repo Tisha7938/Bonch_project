@@ -282,6 +282,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         }
     });
 
+    Logger::registerCallback([this](const QString &msg) {
+        ui->textEdit_Console->appendPlainText(msg);
+    });
+
     initializeSimulationModels();
 }
 
