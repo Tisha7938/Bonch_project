@@ -56,6 +56,7 @@ private:
     int currentStateIndex = -1;
     void saveState();
     void restoreState(const GraphState& state);
+    void setUndoRedoEnabled(bool enabled);
 
     void unpinTab(int index);
     void pinTab();

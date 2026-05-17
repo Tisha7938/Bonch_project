@@ -51,6 +51,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     ui->actionRedo->setIcon(style()->standardIcon(QStyle::SP_ArrowForward));
     ui->actionRedo->setToolTip("Повторить отмененное действие (Ctrl+Y)");
 
+    ui->actionSimulation->setIcon(style()->standardIcon(QStyle::SP_MediaPlay));
+    ui->actionSimulation->setToolTip("Запустить симуляцию");
+
     ui->actionSave_as->setIcon(style()->standardIcon(QStyle::SP_DialogSaveButton));
     ui->actionSave_as->setToolTip("Сохранить граф в файл (Ctrl+Shift+S)");
 
@@ -121,6 +124,14 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             ui->textEdit_Console->appendPlainText("-> Redo");
         } else {
             ui->textEdit_Console->appendPlainText("Нечего повторять.");
+        }
+    });
+
+    connect(ui->actionSimulation, &QAction::triggered, this, [this]() {
+        if (m_simulation && m_simulation->isRunning()) {
+            onSimulationStop();
+        } else {
+            onSimulationStart();
         }
     });
 
@@ -310,6 +321,11 @@ void MainWindow::restoreState(const GraphState &state) {
     graph.setMatrixBandwidth(const_cast<Matrix2D &>(state.band));
     graph.graphView->initScene();
     updateTables();
+}
+
+void MainWindow::setUndoRedoEnabled(bool enabled) {
+    ui->actionUndo->setEnabled(enabled);
+    ui->actionRedo->setEnabled(enabled);
 }
 
 void MainWindow::buttonClearConsoleClicked() { ui->textEdit_Console->clear(); }
@@ -522,6 +538,10 @@ void MainWindow::onSimulationStart() {
     Logger::info("Запуск имитационного моделирования");
     m_simulation->start();
     m_simTimer->start();
+    setUndoRedoEnabled(false);
+    ui->actionSimulation->setText("Stop Simulation");
+    ui->actionSimulation->setIcon(style()->standardIcon(QStyle::SP_MediaStop));
+    ui->actionSimulation->setToolTip("Остановить симуляцию");
     ui->textEdit_Console->appendPlainText("Симуляция запущена");
 }
 
@@ -529,6 +549,10 @@ void MainWindow::onSimulationStop() {
     if (m_simulation) {
         m_simulation->stop();
         m_simTimer->stop();
+        setUndoRedoEnabled(true);
+        ui->actionSimulation->setText("Start Simulation");
+        ui->actionSimulation->setIcon(style()->standardIcon(QStyle::SP_MediaPlay));
+        ui->actionSimulation->setToolTip("Запустить симуляцию");
 
         double avail = m_simulation->getGlobalAvailability();
         Logger::info(QString("Симуляция остановлена. Kг = %1").arg(avail, 0, 'f', 4));
