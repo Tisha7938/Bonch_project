@@ -8,8 +8,28 @@ SimulationEngine::SimulationEngine(double dt, const std::string &distMode) :
 
 void SimulationEngine::setNodes(const std::vector<std::shared_ptr<NodeModel>> &nodes) {
     m_nodes = nodes;
+    std::map<unsigned int, bool> activeNodeIds;
     for (const auto &node: m_nodes) {
-        m_nodeStats[node->id()] = NodeStats{};
+        activeNodeIds[node->id()] = true;
+        if (!m_nodeStats.contains(node->id())) {
+            m_nodeStats[node->id()] = NodeStats{};
+        }
+    }
+
+    for (auto it = m_nodeStats.begin(); it != m_nodeStats.end();) {
+        if (!activeNodeIds.contains(it->first)) {
+            it = m_nodeStats.erase(it);
+        } else {
+            ++it;
+        }
+    }
+
+    for (auto it = m_maintenanceEndTimes.begin(); it != m_maintenanceEndTimes.end();) {
+        if (!activeNodeIds.contains(it->first)) {
+            it = m_maintenanceEndTimes.erase(it);
+        } else {
+            ++it;
+        }
     }
     Logger::info(QString("Инициализировано %1 узлов").arg(nodes.size()));
 }

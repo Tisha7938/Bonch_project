@@ -59,6 +59,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     ui->actionRedo->setIcon(style()->standardIcon(QStyle::SP_ArrowForward));
     ui->actionRedo->setToolTip("Повторить отмененное действие (Ctrl+Y)");
 
+    ui->actionSimulation->setIcon(style()->standardIcon(QStyle::SP_MediaPlay));
+    ui->actionSimulation->setToolTip("Запустить симуляцию");
+
     ui->actionSave_as->setIcon(style()->standardIcon(QStyle::SP_DialogSaveButton));
     ui->actionSave_as->setToolTip("Сохранить граф в файл (Ctrl+Shift+S)");
 
@@ -68,9 +71,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     ui->actionPaste->setIcon(style()->standardIcon(QStyle::SP_DialogOkButton));
     ui->actionPaste->setToolTip("Вставить данные из буфера");
 
-    ui->actionLaunchAlg->setIcon(style()->standardIcon(QStyle::SP_MediaPlay));
-    ui->actionLaunchAlg->setToolTip("Запустить моделирование");
-
     ui->actionDeleteGraph->setIcon(style()->standardIcon(QStyle::SP_TrashIcon));
     ui->actionDeleteGraph->setToolTip("Полностью удалить граф");
 
@@ -79,9 +79,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
     ui->actionDeleteNode->setIcon(style()->standardIcon(QStyle::SP_DialogDiscardButton));
     ui->actionDeleteNode->setToolTip("Удалить последний узел");
-
-    ui->actionRefreshTables->setIcon(style()->standardIcon(QStyle::SP_BrowserReload));
-    ui->actionRefreshTables->setToolTip("Синхронизировать данные таблиц");
 
     ui->actionClearConsole->setIcon(style()->standardIcon(QStyle::SP_DialogResetButton));
     ui->actionClearConsole->setToolTip("Очистить историю в консоли");
@@ -94,6 +91,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         graph.resizeGraph(graph.getAmount(), newAmount);
         initializeSimulationModels();
         graph.graphView->initScene();
+        if (m_simulation && m_simulation->isRunning())
+            syncSimulationModelsWithGraph();
         updateTables();
         ui->textEdit_Console->appendPlainText("Добавлен узел. Всего: " + QString::number(newAmount));
     });
@@ -105,6 +104,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             graph.resizeGraph(graph.getAmount(), newAmount);
             initializeSimulationModels();
             graph.graphView->scene()->update();
+            if (m_simulation && m_simulation->isRunning())
+                syncSimulationModelsWithGraph();
             updateTables();
             ui->textEdit_Console->appendPlainText("Узел удален. Осталось: " + QString::number(newAmount));
         }
@@ -115,6 +116,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         graph.resizeGraph(graph.getAmount(), 0);
         initializeSimulationModels();
         graph.graphView->scene()->update();
+        if (m_simulation && m_simulation->isRunning())
+            syncSimulationModelsWithGraph();
         updateTables();
         ui->textEdit_Console->appendPlainText("Граф полностью очищен.");
     });
@@ -122,9 +125,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     connect(ui->actionClearConsole, &QAction::triggered, this, &MainWindow::buttonClearConsoleClicked);
 
     connect(ui->actionUndo, &QAction::triggered, this, [this]() {
-        if (currentStateIndex > 0) {
-            currentStateIndex--;
-            restoreState(undoStack[currentStateIndex]);
+        if (!undoStack.empty()) {
+            redoStack.append(captureState());
+            restoreState(undoStack.takeLast());
             ui->textEdit_Console->appendPlainText("<- Undo");
         } else {
             ui->textEdit_Console->appendPlainText("Нечего отменять.");
@@ -132,16 +135,16 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     });
 
     connect(ui->actionRedo, &QAction::triggered, this, [this]() {
-        if (currentStateIndex < undoStack.size() - 1) {
-            currentStateIndex++;
-            restoreState(undoStack[currentStateIndex]);
+        if (!redoStack.empty()) {
+            undoStack.append(captureState());
+            restoreState(redoStack.takeLast());
             ui->textEdit_Console->appendPlainText("-> Redo");
         } else {
             ui->textEdit_Console->appendPlainText("Нечего повторять.");
         }
     });
 
-    connect(ui->actionLaunchAlg, &QAction::triggered, this, [this]() {
+    connect(ui->actionSimulation, &QAction::triggered, this, [this]() {
         if (m_simulation && m_simulation->isRunning()) {
             onSimulationStop();
         } else {
@@ -205,11 +208,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         graph.graphView->scene()->update();
     });
 
-    connect(ui->actionFlow, &QAction::triggered, this, [this](bool checked) {
-        checked ? graph.setFlag(GraphFlags::ShowFlow) : graph.unsetFlag(GraphFlags::ShowFlow);
-        graph.graphView->scene()->update();
-    });
-
     auto view = ui->menuView_mode;
     auto docks = this->findChildren<QDockWidget *>();
     if (!docks.empty()) {
@@ -249,7 +247,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
     connect(ui->actionCopy, &QAction::triggered, this, std::bind(&MainWindow::myCopy, this));
     connect(ui->actionPaste, &QAction::triggered, this, std::bind(&MainWindow::myPaste, this));
-    connect(ui->actionRefreshTables, &QAction::triggered, this, std::bind(&MainWindow::updateTables, this));
 
     nodeMovementGroup = new QActionGroup(this);
     nodeMovementGroup->addAction(ui->actionAutomatic);
@@ -266,7 +263,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         }
     });
     ui->actionAutomatic->setChecked(true);
-    saveState();
 
     m_simTimer = new QTimer(this);
     m_simTimer->setInterval(100);
@@ -347,24 +343,24 @@ void MainWindow::saveToFile() {
         out << "\n";
     };
 
-    saveMatrix("Adjacency Matrix", graph.getMatrixAdjacent());
-    saveMatrix("Flow Matrix", graph.getMatrixFlow());
     saveMatrix("Bandwidth Matrix", graph.getMatrixBandwidth());
 
     file.close();
     ui->textEdit_Console->appendPlainText("Граф успешно сохранен в: " + fileName);
 }
 
-void MainWindow::saveState() {
-    while (undoStack.size() > currentStateIndex + 1)
-        undoStack.removeLast();
+GraphState MainWindow::captureState() {
     GraphState s;
     s.amount = graph.getAmount();
     s.adj = graph.getMatrixAdjacent();
     s.flow = graph.getMatrixFlow();
     s.band = graph.getMatrixBandwidth();
-    undoStack.append(s);
-    currentStateIndex++;
+    return s;
+}
+
+void MainWindow::saveState() {
+    undoStack.append(captureState());
+    redoStack.clear();
 }
 
 void MainWindow::restoreState(const GraphState &state) {
@@ -375,6 +371,11 @@ void MainWindow::restoreState(const GraphState &state) {
     initializeSimulationModels();
     graph.graphView->initScene();
     updateTables();
+}
+
+void MainWindow::setUndoRedoEnabled(bool enabled) {
+    ui->actionUndo->setEnabled(enabled);
+    ui->actionRedo->setEnabled(enabled);
 }
 
 void MainWindow::buttonClearConsoleClicked() { ui->textEdit_Console->clear(); }
@@ -462,6 +463,8 @@ void MainWindow::applyGraphMatrix(QTableView *table) {
     else if (table->objectName().contains("Bandwidth"))
         graph.setMatrixBandwidth(m);
     graph.graphView->initScene();
+    if (m_simulation && m_simulation->isRunning())
+        syncSimulationModelsWithGraph();
     updateTables();
 }
 
@@ -479,6 +482,8 @@ void MainWindow::applyEdgesList(QTableView *table) {
         } else
             graph.removeEdge(u, v);
     }
+    if (m_simulation && m_simulation->isRunning())
+        syncSimulationModelsWithGraph();
     updateTables();
 }
 
@@ -530,26 +535,39 @@ void MainWindow::initializeSimulationModels() {
         return;
     }
 
-    m_nodeModels.clear();
+    syncSimulationModelsWithGraph();
+}
+
+void MainWindow::syncSimulationModelsWithGraph() {
+    QMap<unsigned int, std::shared_ptr<NodeModel>> existingModels;
+    for (const auto &model: m_nodeModels) {
+        existingModels.insert(model->id(), model);
+    }
 
     const auto &nodesMap = graph.getNodes();
+    m_nodeModels.clear();
+    m_nodeModels.reserve(nodesMap.size());
+
     for (auto it = nodesMap.constBegin(); it != nodesMap.constEnd(); ++it) {
         unsigned int id = it.key();
         Node *qtNode = it.value();
 
-        auto model = std::make_shared<NodeModel>(id);
+        auto model = existingModels.value(id);
+        if (!model) {
+            model = std::make_shared<NodeModel>(id);
 
-        // циклически для демонстрации
-        switch (id % 3) {
-            case 0:
-                model->setStrategy(std::make_unique<StrategyBasicControl>());
-                break;
-            case 1:
-                model->setStrategy(std::make_unique<StrategyNoControlCheck>());
-                break;
-            default:
-                model->setStrategy(std::make_unique<StrategyOfflineCheck>());
-                break;
+            // циклически для демонстрации
+            switch (id % 3) {
+                case 0:
+                    model->setStrategy(std::make_unique<StrategyBasicControl>());
+                    break;
+                case 1:
+                    model->setStrategy(std::make_unique<StrategyNoControlCheck>());
+                    break;
+                default:
+                    model->setStrategy(std::make_unique<StrategyOfflineCheck>());
+                    break;
+            }
         }
 
         m_nodeModels.push_back(model);
@@ -559,14 +577,16 @@ void MainWindow::initializeSimulationModels() {
                 QString("Node-%1: стратегия %2").arg(id).arg(model->strategy() ? model->strategy()->name() : "None"));
     }
 
-    m_simulation = std::make_unique<SimulationEngine>(0.1, "exponential");
+    if (!m_simulation) {
+        m_simulation = std::make_unique<SimulationEngine>(0.1, "exponential");
+        m_simulation->setEventCallback([this](unsigned int nodeId, const std::string &event) {
+            Logger::event(nodeId, QString::fromStdString(event));
+        });
+    }
     m_simulation->setNodes(m_nodeModels);
 
-    m_simulation->setEventCallback([this](unsigned int nodeId, const std::string &event) {
-        Logger::event(nodeId, QString::fromStdString(event));
-    });
-
     Logger::info(QString("Готово: %1 узлов привязано").arg(m_nodeModels.size()));
+    graph.graphView->scene()->update();
 }
 
 void MainWindow::onSimulationStart() {
@@ -584,6 +604,10 @@ void MainWindow::onSimulationStart() {
     Logger::info("Запуск имитационного моделирования");
     m_simulation->start();
     m_simTimer->start();
+    setUndoRedoEnabled(false);
+    ui->actionSimulation->setText("Stop Simulation");
+    ui->actionSimulation->setIcon(style()->standardIcon(QStyle::SP_MediaStop));
+    ui->actionSimulation->setToolTip("Остановить симуляцию");
     ui->textEdit_Console->appendPlainText("Симуляция запущена");
 }
 
@@ -591,6 +615,10 @@ void MainWindow::onSimulationStop() {
     if (m_simulation) {
         m_simulation->stop();
         m_simTimer->stop();
+        setUndoRedoEnabled(true);
+        ui->actionSimulation->setText("Start Simulation");
+        ui->actionSimulation->setIcon(style()->standardIcon(QStyle::SP_MediaPlay));
+        ui->actionSimulation->setToolTip("Запустить симуляцию");
 
         double avail = m_simulation->getGlobalAvailability();
         Logger::info(QString("Симуляция остановлена. Kг = %1").arg(avail, 0, 'f', 4));

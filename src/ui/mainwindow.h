@@ -54,9 +54,11 @@ private:
     QMap<QString, QWidget *> docksViewMode;
 
     QList<GraphState> undoStack;
-    int currentStateIndex = -1;
+    QList<GraphState> redoStack;
+    GraphState captureState();
     void saveState();
     void restoreState(const GraphState& state);
+    void setUndoRedoEnabled(bool enabled);
 
     void unpinTab(int index);
     void pinTab();
@@ -68,6 +70,7 @@ private:
     void updateTables();
 
     void initializeSimulationModels();
+    void syncSimulationModelsWithGraph();
 
     template<typename T>
     void setTableFromMatrix(QTableView *table, T &matrix, int height = -1, int width = -1);
