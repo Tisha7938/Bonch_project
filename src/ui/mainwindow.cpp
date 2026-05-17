@@ -91,6 +91,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     connect(ui->actionDeleteNode, &QAction::triggered, this, [this]() {
         if (graph.getAmount() > 0) {
             saveState();
+            nodeSidebar->setNode(nullptr);
             int newAmount = graph.getAmount() - 1;
             graph.resizeGraph(graph.getAmount(), newAmount);
             initializeSimulationModels();
@@ -104,6 +105,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
     connect(ui->actionDeleteGraph, &QAction::triggered, this, [this]() {
         saveState();
+        nodeSidebar->setNode(nullptr);
         graph.resizeGraph(graph.getAmount(), 0);
         initializeSimulationModels();
         graph.graphView->scene()->update();
@@ -355,6 +357,7 @@ void MainWindow::saveState() {
 }
 
 void MainWindow::restoreState(const GraphState &state) {
+    nodeSidebar->setNode(nullptr);
     graph.resizeGraph(graph.getAmount(), state.amount);
     graph.setMatrixAdjacent(const_cast<Matrix2D &>(state.adj));
     graph.setMatrixFlow(const_cast<Matrix2D &>(state.flow));
