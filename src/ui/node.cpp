@@ -15,6 +15,8 @@ Node::Node(int index, GraphWidget *graphWidget) : graph(graphWidget) {
     this->index = index;
     setFlag(ItemIsMovable);
     setFlag(ItemSendsGeometryChanges);
+    setFlag(ItemIsSelectable);
+    setAcceptHoverEvents(true);
     setCacheMode(DeviceCoordinateCache);
     setZValue(1);
     this->setPos(QRandomGenerator::global()->bounded(300), QRandomGenerator::global()->bounded(300));
@@ -124,28 +126,42 @@ void Node::bindModel(NodeModel *model) {
 }
 
 void Node::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *) {
-    QColor fillColor = Qt::white;
+    QColor baseColor = QColor(210, 218, 228);
     if (m_model) {
         switch (m_model->state()) {
             case NodeModel::State::Operational:
-                fillColor = QColor(144, 238, 144);
+                baseColor = QColor(76, 175, 80);
                 break;
             case NodeModel::State::Failed:
-                fillColor = QColor(255, 99, 71);
+                baseColor = QColor(244, 67, 54);
                 break;
             case NodeModel::State::Maintenance:
-                fillColor = QColor(255, 215, 0);
+                baseColor = QColor(255, 193, 7);
                 break;
         }
     }
 
-    painter->fillPath(shape(), QBrush(fillColor));
-    painter->setPen(QPen(Qt::black, strokeWidth));
+    painter->setRenderHint(QPainter::Antialiasing, true);
+
+    QRadialGradient fillGradient(QPointF(-8, -10), nodeSize);
+    fillGradient.setColorAt(0.0, baseColor.lighter(165));
+    fillGradient.setColorAt(1.0, baseColor.darker(120));
+    painter->setBrush(fillGradient);
+
+    const bool isActive = isSelected() || (option->state & QStyle::State_MouseOver);
+    painter->setPen(QPen(isActive ? QColor(33, 150, 243) : QColor(45, 55, 72), isActive ? 3 : 2));
     painter->drawPath(shape());
+
+    if (m_model) {
+        const qreal ringSpan = qBound(0.0, m_model->reliability(), 1.0) * 360.0;
+        QRectF ringRect(-nodeSize / 2.0 + 4, -nodeSize / 2.0 + 4, nodeSize - 8, nodeSize - 8);
+        painter->setPen(QPen(QColor(255, 255, 255, 210), 3, Qt::SolidLine, Qt::RoundCap));
+        painter->drawArc(ringRect, 90 * 16, -static_cast<int>(ringSpan * 16.0));
+    }
 
     QFont font = painter->font();
     font.setBold(true);
-    font.setPointSize(14);
+    font.setPointSize(12);
     painter->setFont(font);
 
     QString nodeText = QString::number(index);
@@ -153,7 +169,7 @@ void Node::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     QRect textRect = metrics.boundingRect(nodeText);
 
     QPointF textPnt(-(textRect.width()) / 2 - 0.7, textRect.height() / 3. - 0.7);
-    painter->setPen(Qt::black);
+    painter->setPen(QColor(20, 20, 20));
     painter->drawText(textPnt, nodeText);
 }
 

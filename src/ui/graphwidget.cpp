@@ -22,6 +22,7 @@ GraphWidget::GraphWidget(QMap<QPair<Node *, Node *>, Edge *> *edges, QMap<unsign
     setMinimumSize(300, 200);
     setTransformationAnchor(QGraphicsView::NoAnchor);
     setMouseTracking(true);
+    setBackgroundBrush(QBrush(QColor(246, 249, 252)));
 }
 
 void GraphWidget::runTimer() {
