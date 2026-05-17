@@ -274,7 +274,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     });
 
     initializeSimulationModels();
-    dock_Reliability = new QDockWidget(this);
+    dock_Reliability = new QDockWidget("Анализ связности", this);
     dock_Reliability->setObjectName("dock_Reliability");
     dock_Reliability->setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable);
     dock_Reliability->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::BottomDockWidgetArea);
@@ -294,7 +294,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         }
     }
     dock_Reliability->raise();
-    auto *reliabilityAct = new QAction("ДНФ/КНФ", this);
+    auto *reliabilityAct = new QAction("Анализ связности", this);
     reliabilityAct->setCheckable(true);
     reliabilityAct->setChecked(true);
     connect(reliabilityAct, &QAction::triggered, this, [this](bool checked) {
