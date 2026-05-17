@@ -13,6 +13,7 @@
 #include "qspinbox.h"
 #include "qtableview.h"
 #include "simulationengine.h"
+#include "reliabilitywidget.h"
 
 // Форвард-декларация
 class NodeInfoWidget;
@@ -53,9 +54,11 @@ private:
     QMap<QString, QWidget *> docksViewMode;
 
     QList<GraphState> undoStack;
-    int currentStateIndex = -1;
+    QList<GraphState> redoStack;
+    GraphState captureState();
     void saveState();
     void restoreState(const GraphState& state);
+    void setUndoRedoEnabled(bool enabled);
 
     void unpinTab(int index);
     void pinTab();
@@ -67,6 +70,7 @@ private:
     void updateTables();
 
     void initializeSimulationModels();
+    void syncSimulationModelsWithGraph();
 
     template<typename T>
     void setTableFromMatrix(QTableView *table, T &matrix, int height = -1, int width = -1);
@@ -83,4 +87,7 @@ private:
     QTimer* m_simTimer = nullptr;
     std::unique_ptr<SimulationEngine> m_simulation;
     std::vector<std::shared_ptr<NodeModel>> m_nodeModels;
+
+    ReliabilityWidget* m_reliabilityWidget;
+    QDockWidget* dock_Reliability;
 };

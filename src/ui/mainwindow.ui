@@ -102,15 +102,6 @@
     <addaction name="actionRedo"/>
     <addaction name="actionCopy"/>
     <addaction name="actionPaste"/>
-    <addaction name="actionRefreshTables"/>
-   </widget>
-   <widget class="QMenu" name="menuAlgorithm">
-    <property name="enabled">
-     <bool>false</bool>
-    </property>
-    <property name="title">
-     <string>Algorithm</string>
-    </property>
    </widget>
    <widget class="QMenu" name="menuNode_movement">
     <property name="title">
@@ -127,12 +118,10 @@
     <addaction name="separator"/>
     <addaction name="actionWeights"/>
     <addaction name="actionBandwidth"/>
-    <addaction name="actionFlow"/>
     <addaction name="separator"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuEdit"/>
-   <addaction name="menuAlgorithm"/>
    <addaction name="menuNode_movement"/>
    <addaction name="menuView_mode"/>
   </widget>
@@ -155,84 +144,10 @@
    </attribute>
    <addaction name="actionUndo"/>
    <addaction name="actionRedo"/>
-   <addaction name="actionLaunchAlg"/>
+   <addaction name="actionSimulation"/>
    <addaction name="actionDeleteGraph"/>
    <addaction name="actionAddNode"/>
    <addaction name="actionDeleteNode"/>
-   <addaction name="actionRefreshTables"/>
-  </widget>
-  <widget class="QDockWidget" name="dock_MatrixAdj">
-   <property name="features">
-    <set>QDockWidget::DockWidgetFeature::DockWidgetFloatable|QDockWidget::DockWidgetFeature::DockWidgetMovable</set>
-   </property>
-   <property name="allowedAreas">
-    <set>Qt::DockWidgetArea::LeftDockWidgetArea</set>
-   </property>
-   <property name="windowTitle">
-    <string>Adjacent Matrix</string>
-   </property>
-   <attribute name="dockWidgetArea">
-    <number>1</number>
-   </attribute>
-   <widget class="QWidget" name="dockWidgetContents_15">
-    <layout class="QGridLayout" name="gridLayout_10">
-     <property name="leftMargin">
-      <number>0</number>
-     </property>
-     <property name="topMargin">
-      <number>0</number>
-     </property>
-     <property name="rightMargin">
-      <number>0</number>
-     </property>
-     <property name="bottomMargin">
-      <number>0</number>
-     </property>
-     <property name="spacing">
-      <number>0</number>
-     </property>
-     <item row="0" column="0">
-      <layout class="QHBoxLayout" name="horizontalLayout_3">
-       <property name="spacing">
-        <number>0</number>
-       </property>
-       <item>
-        <spacer name="horizontalSpacer_5">
-         <property name="orientation">
-          <enum>Qt::Orientation::Horizontal</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>40</width>
-           <height>20</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item>
-        <widget class="QLabel" name="label_5">
-         <property name="text">
-          <string>Nodes count:</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QSpinBox" name="spin_MatrixAdj_NodesCount"/>
-       </item>
-       <item>
-        <widget class="QPushButton" name="button_MatrixAdj_Apply">
-         <property name="text">
-          <string>Apply</string>
-         </property>
-        </widget>
-       </item>
-      </layout>
-     </item>
-     <item row="1" column="0">
-      <widget class="QTableView" name="table_MatrixAdj_Graph"/>
-     </item>
-    </layout>
-   </widget>
   </widget>
   <widget class="QDockWidget" name="dock_ListEdges">
    <property name="features">
@@ -307,79 +222,6 @@
      </item>
      <item row="1" column="0">
       <widget class="QTableView" name="table_ListEdges_Graph"/>
-     </item>
-    </layout>
-   </widget>
-  </widget>
-  <widget class="QDockWidget" name="dock_MatrixFlow">
-   <property name="features">
-    <set>QDockWidget::DockWidgetFeature::DockWidgetFloatable|QDockWidget::DockWidgetFeature::DockWidgetMovable</set>
-   </property>
-   <property name="allowedAreas">
-    <set>Qt::DockWidgetArea::LeftDockWidgetArea</set>
-   </property>
-   <property name="windowTitle">
-    <string>Flow Matrix</string>
-   </property>
-   <attribute name="dockWidgetArea">
-    <number>1</number>
-   </attribute>
-   <widget class="QWidget" name="dockWidgetContents_12">
-    <layout class="QGridLayout" name="gridLayout_11">
-     <property name="leftMargin">
-      <number>0</number>
-     </property>
-     <property name="topMargin">
-      <number>0</number>
-     </property>
-     <property name="rightMargin">
-      <number>0</number>
-     </property>
-     <property name="bottomMargin">
-      <number>0</number>
-     </property>
-     <property name="spacing">
-      <number>0</number>
-     </property>
-     <item row="0" column="0">
-      <layout class="QHBoxLayout" name="horizontalLayout_7">
-       <property name="spacing">
-        <number>0</number>
-       </property>
-       <item>
-        <spacer name="horizontalSpacer_10">
-         <property name="orientation">
-          <enum>Qt::Orientation::Horizontal</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>40</width>
-           <height>20</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item>
-        <widget class="QLabel" name="label_9">
-         <property name="text">
-          <string>Nodes count:</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QSpinBox" name="spin_MatrixFlow_NodesCount"/>
-       </item>
-       <item>
-        <widget class="QPushButton" name="button_MatrixFlow_Apply">
-         <property name="text">
-          <string>Apply</string>
-         </property>
-        </widget>
-       </item>
-      </layout>
-     </item>
-     <item row="1" column="0">
-      <widget class="QTableView" name="table_MatrixFlow_Graph"/>
      </item>
     </layout>
    </widget>
@@ -621,13 +463,12 @@
     <string>M</string>
    </property>
   </action>
-  <action name="actionLaunchAlg">
-   <property name="icon">
-    <iconset>
-     <normaloff>:/ico/icons/launchAlg.svg</normaloff>:/ico/icons/launchAlg.svg</iconset>
-   </property>
+  <action name="actionSimulation">
    <property name="text">
-    <string>LaunchAlg</string>
+    <string>Start Simulation</string>
+   </property>
+   <property name="toolTip">
+    <string>Start simulation</string>
    </property>
    <property name="menuRole">
     <enum>QAction::MenuRole::NoRole</enum>
@@ -743,34 +584,6 @@
     <enum>QAction::MenuRole::NoRole</enum>
    </property>
   </action>
-  <action name="actionFlow">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Flow</string>
-   </property>
-   <property name="menuRole">
-    <enum>QAction::MenuRole::NoRole</enum>
-   </property>
-  </action>
-  <action name="actionRefreshTables">
-   <property name="icon">
-    <iconset>
-     <normaloff>:/ico/icons/Refresh.svg</normaloff>:/ico/icons/Refresh.svg</iconset>
-   </property>
-   <property name="text">
-    <string>Refresh Tables</string>
-   </property>
-   <property name="toolTip">
-    <string>Refresh Tables</string>
-   </property>
-   <property name="shortcut">
-    <string>F5</string>
-   </property>
-  </action>
-  <zorder>dock_MatrixFlow</zorder>
-  <zorder>dock_MatrixAdj</zorder>
   <zorder>dock_ListEdges</zorder>
   <zorder>dock_Console</zorder>
  </widget>

@@ -15,15 +15,15 @@ NodeInfoWidget::NodeInfoWidget(QWidget *parent) : QWidget(parent) {
 
     setStyleSheet(
             "#NodeInfoWidget { background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #f8fafc, stop:1 #eef2f7); }"
-            "QLabel { font-size: 13px; color: #1f2937; border: none; }"
-            "QLabel#titleLabel { font-size: 15px; font-weight: 700; color: #0f172a; }"
+            "QLabel { font-size: 13px; border: none; }"
+            "QLabel#titleLabel { font-size: 15px; font-weight: 700; }"
             "QLabel#stateBadge { border-radius: 10px; padding: 2px 10px; font-weight: 600; }"
-            "QPlainTextEdit { border: 1px solid #cbd5e1; border-radius: 8px; background: #ffffff; padding: 6px; "
+            "QPlainTextEdit { border: 1px; border-radius: 8px; padding: 6px; "
             "font-family: Consolas, 'Courier New', monospace; font-size: 12px; }"
-            "QCheckBox { font-size: 13px; color: #111827; spacing: 8px; padding: 4px; }"
+            "QCheckBox { font-size: 13px; spacing: 8px; padding: 4px; }"
             "QCheckBox::indicator { width: 15px; height: 15px; }"
-            "QCheckBox::indicator:unchecked { border: 1px solid #94a3b8; border-radius: 4px; background: #fff; }"
-            "QCheckBox::indicator:checked { border: 1px solid #2563eb; border-radius: 4px; background: #2563eb; }");
+            "QCheckBox::indicator:unchecked { border: 1px; border-radius: 4px; background: #fff; }"
+            "QCheckBox::indicator:checked { border: 1px; border-radius: 4px; background: #2563eb; }");
 
     auto *mainLayout = new QVBoxLayout(this);
     mainLayout->setContentsMargins(12, 12, 12, 12);
@@ -33,7 +33,7 @@ NodeInfoWidget::NodeInfoWidget(QWidget *parent) : QWidget(parent) {
     titleLabel->setObjectName("titleLabel");
     mainLayout->addWidget(titleLabel);
 
-    summaryValue = new QLabel("Р’С‹Р±РµСЂРёС‚Рµ РІРµСЂС€РёРЅСѓ РЅР° РіСЂР°С„Рµ", this);
+    summaryValue = new QLabel("Выберите вершину на графе", this);
     summaryValue->setStyleSheet("color: #475569; font-size: 12px;");
     mainLayout->addWidget(summaryValue);
 
@@ -186,7 +186,7 @@ void NodeInfoWidget::clearView() {
     stateValue->setText("-");
     stateValue->setStyleSheet("background: #e2e8f0; color: #475569; border-radius: 10px; padding: 2px 10px; font-weight: 600;");
     reliabilityValue->setText("-");
-    summaryValue->setText("Р’С‹Р±РµСЂРёС‚Рµ РІРµСЂС€РёРЅСѓ РЅР° РіСЂР°С„Рµ");
+    summaryValue->setText("Выберите вершину на графе");
     edgeListValue->setPlainText("-");
     inboxValue->setPlainText("-");
 

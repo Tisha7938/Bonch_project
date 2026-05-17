@@ -58,11 +58,11 @@ Graph::~Graph() {
     }
 }
 
-const Matrix2D Graph::getMatrixAdjacent() { return adjacent; }
-const Matrix2D Graph::getMatrixFlow() { return flow; }
-const Matrix2D Graph::getMatrixBandwidth() { return bandwidth; }
+const Matrix2D Graph::getMatrixAdjacent() const { return adjacent; }
+const Matrix2D Graph::getMatrixFlow() const { return flow; }
+const Matrix2D Graph::getMatrixBandwidth() const { return bandwidth; }
 
-const QList<QVariantList> Graph::getListEdges() {
+const QList<QVariantList> Graph::getListEdges() const {
     QList<QVariantList> edgeList(edges.size());
     unsigned int i = 0;
     for (auto [key, edge]: edges.asKeyValueRange()) {
@@ -340,7 +340,7 @@ void Graph::addNode(unsigned int i) {
 
 const QFlags<GraphFlags> Graph::getFlags() { return flags; }
 
-unsigned int Graph::getAmount() { return this->amount; }
+unsigned int Graph::getAmount() const { return this->amount; }
 
 void Graph::resizeGraph(unsigned int oldAmount, unsigned int newAmount) {
     unsigned int i, j;

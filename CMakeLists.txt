@@ -83,6 +83,24 @@ set(SIMULATION_SOURCES
 
 set(UTILS_HEADERS src/utils/logger.h)
 
+set(RELIABILITY_HEADERS
+        src/core/reliability/pathfinder.h
+        src/core/reliability/logicalforms.h
+        src/core/reliability/networkanalyzer.h
+        src/ui/reliabilitywidget.h
+        src/core/reliability/pathfinder.cpp
+        src/core/reliability/pathfinder.h
+)
+
+set(RELIABILITY_SOURCES
+        src/core/reliability/pathfinder.cpp
+        src/core/reliability/logicalforms.cpp
+        src/core/reliability/networkanalyzer.cpp
+        src/ui/reliabilitywidget.cpp
+        src/core/reliability/pathfinder.cpp
+        src/core/reliability/pathfinder.h
+)
+
 add_executable(final_project
         ${CORE_SOURCES}
         ${CORE_HEADERS}
@@ -95,6 +113,8 @@ add_executable(final_project
         ${STRATEGIES_HEADERS}
         ${STRATEGIES_SOURCES}
         ${UTILS_HEADERS}
+        ${RELIABILITY_HEADERS}
+        ${RELIABILITY_SOURCES}
 )
 
 target_link_libraries(final_project PRIVATE
@@ -108,6 +128,7 @@ target_include_directories(final_project PRIVATE
         ${CMAKE_SOURCE_DIR}/src/core/enums
         ${CMAKE_SOURCE_DIR}/src/core/strategies
         ${CMAKE_SOURCE_DIR}/src/core/simulation
+        ${CMAKE_SOURCE_DIR}/src/core/reliability
         ${CMAKE_SOURCE_DIR}/src/ui
         ${CMAKE_SOURCE_DIR}/src/utils
 )
