@@ -60,9 +60,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     ui->actionPaste->setIcon(style()->standardIcon(QStyle::SP_DialogOkButton));
     ui->actionPaste->setToolTip("Вставить данные из буфера");
 
-    ui->actionLaunchAlg->setIcon(style()->standardIcon(QStyle::SP_MediaPlay));
-    ui->actionLaunchAlg->setToolTip("Запустить моделирование");
-
     ui->actionDeleteGraph->setIcon(style()->standardIcon(QStyle::SP_TrashIcon));
     ui->actionDeleteGraph->setToolTip("Полностью удалить граф");
 
@@ -71,9 +68,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
     ui->actionDeleteNode->setIcon(style()->standardIcon(QStyle::SP_DialogDiscardButton));
     ui->actionDeleteNode->setToolTip("Удалить последний узел");
-
-    ui->actionRefreshTables->setIcon(style()->standardIcon(QStyle::SP_BrowserReload));
-    ui->actionRefreshTables->setToolTip("Синхронизировать данные таблиц");
 
     ui->actionClearConsole->setIcon(style()->standardIcon(QStyle::SP_DialogResetButton));
     ui->actionClearConsole->setToolTip("Очистить историю в консоли");
@@ -127,14 +121,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             ui->textEdit_Console->appendPlainText("-> Redo");
         } else {
             ui->textEdit_Console->appendPlainText("Нечего повторять.");
-        }
-    });
-
-    connect(ui->actionLaunchAlg, &QAction::triggered, this, [this]() {
-        if (m_simulation && m_simulation->isRunning()) {
-            onSimulationStop();
-        } else {
-            onSimulationStart();
         }
     });
 
@@ -194,11 +180,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         graph.graphView->scene()->update();
     });
 
-    connect(ui->actionFlow, &QAction::triggered, this, [this](bool checked) {
-        checked ? graph.setFlag(GraphFlags::ShowFlow) : graph.unsetFlag(GraphFlags::ShowFlow);
-        graph.graphView->scene()->update();
-    });
-
     auto view = ui->menuView_mode;
     auto docks = this->findChildren<QDockWidget *>();
     if (!docks.empty()) {
@@ -238,7 +219,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
     connect(ui->actionCopy, &QAction::triggered, this, std::bind(&MainWindow::myCopy, this));
     connect(ui->actionPaste, &QAction::triggered, this, std::bind(&MainWindow::myPaste, this));
-    connect(ui->actionRefreshTables, &QAction::triggered, this, std::bind(&MainWindow::updateTables, this));
 
     nodeMovementGroup = new QActionGroup(this);
     nodeMovementGroup->addAction(ui->actionAutomatic);
@@ -305,8 +285,6 @@ void MainWindow::saveToFile() {
         out << "\n";
     };
 
-    saveMatrix("Adjacency Matrix", graph.getMatrixAdjacent());
-    saveMatrix("Flow Matrix", graph.getMatrixFlow());
     saveMatrix("Bandwidth Matrix", graph.getMatrixBandwidth());
 
     file.close();
