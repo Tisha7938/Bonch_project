@@ -279,6 +279,37 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     });
 
     initializeSimulationModels();
+    // === Reliability Widget: слева снизу, после матриц ===
+    dock_Reliability = new QDockWidget("Надёжность", this);
+    dock_Reliability->setObjectName("dock_Reliability");
+    dock_Reliability->setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable);
+    dock_Reliability->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::BottomDockWidgetArea);
+
+    m_reliabilityWidget = new ReliabilityWidget(this);
+    m_reliabilityWidget->setGraph(&graph);
+    dock_Reliability->setWidget(m_reliabilityWidget);
+
+    // Добавляем в ЛЕВУЮ область
+    this->addDockWidget(Qt::LeftDockWidgetArea, dock_Reliability);
+
+    if (!graphMatrixViews.isEmpty()) {
+        for (auto *dock : findChildren<QDockWidget*>()) {
+            if (dock->widget() == graphMatrixViews.last()) {
+                this->tabifyDockWidget(dock, dock_Reliability);
+                break;
+            }
+        }
+    }
+    dock_Reliability->raise();  // Сделать видимой по умолчанию
+
+    // Добавляем действие в меню "View mode" для управления видимостью
+    auto *reliabilityAct = new QAction("Надёжность (ДНФ/КНФ)", this);
+    reliabilityAct->setCheckable(true);
+    reliabilityAct->setChecked(true);  // Видим по умолчанию
+    connect(reliabilityAct, &QAction::triggered, this, [this](bool checked) {
+        dock_Reliability->setVisible(checked);
+    });
+    ui->menuView_mode->addAction(reliabilityAct);  // В то же меню, что и другие доки
 }
 
 MainWindow::~MainWindow() {
