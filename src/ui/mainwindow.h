@@ -68,6 +68,7 @@ private:
     void updateTables();
 
     void initializeSimulationModels();
+    void syncSimulationModelsWithGraph();
 
     template<typename T>
     void setTableFromMatrix(QTableView *table, T &matrix, int height = -1, int width = -1);

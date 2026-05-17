@@ -82,6 +82,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         int newAmount = graph.getAmount() + 1;
         graph.resizeGraph(graph.getAmount(), newAmount);
         graph.graphView->initScene();
+        if (m_simulation && m_simulation->isRunning())
+            syncSimulationModelsWithGraph();
         updateTables();
         ui->textEdit_Console->appendPlainText("Добавлен узел. Всего: " + QString::number(newAmount));
     });
@@ -92,6 +94,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             int newAmount = graph.getAmount() - 1;
             graph.resizeGraph(graph.getAmount(), newAmount);
             graph.graphView->scene()->update();
+            if (m_simulation && m_simulation->isRunning())
+                syncSimulationModelsWithGraph();
             updateTables();
             ui->textEdit_Console->appendPlainText("Узел удален. Осталось: " + QString::number(newAmount));
         }
@@ -101,6 +105,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         saveState();
         graph.resizeGraph(graph.getAmount(), 0);
         graph.graphView->scene()->update();
+        if (m_simulation && m_simulation->isRunning())
+            syncSimulationModelsWithGraph();
         updateTables();
         ui->textEdit_Console->appendPlainText("Граф полностью очищен.");
     });
@@ -413,6 +419,8 @@ void MainWindow::applyGraphMatrix(QTableView *table) {
     else if (table->objectName().contains("Bandwidth"))
         graph.setMatrixBandwidth(m);
     graph.graphView->initScene();
+    if (m_simulation && m_simulation->isRunning())
+        syncSimulationModelsWithGraph();
     updateTables();
 }
 
@@ -430,6 +438,8 @@ void MainWindow::applyEdgesList(QTableView *table) {
         } else
             graph.removeEdge(u, v);
     }
+    if (m_simulation && m_simulation->isRunning())
+        syncSimulationModelsWithGraph();
     updateTables();
 }
 
@@ -481,29 +491,42 @@ void MainWindow::initializeSimulationModels() {
         return;
     }
 
-    m_nodeModels.clear();
+    syncSimulationModelsWithGraph();
+}
+
+void MainWindow::syncSimulationModelsWithGraph() {
+    QMap<unsigned int, std::shared_ptr<NodeModel>> existingModels;
+    for (const auto &model: m_nodeModels) {
+        existingModels.insert(model->id(), model);
+    }
 
     const auto &nodesMap = graph.getNodes();
+    m_nodeModels.clear();
+    m_nodeModels.reserve(nodesMap.size());
+
     for (auto it = nodesMap.constBegin(); it != nodesMap.constEnd(); ++it) {
         unsigned int id = it.key();
         Node *qtNode = it.value();
 
-        auto model = std::make_shared<NodeModel>(id);
+        auto model = existingModels.value(id);
+        if (!model) {
+            model = std::make_shared<NodeModel>(id);
 
-        // циклически для демонстрации
-        switch (id % 4) {
-            case 0:
-                model->setStrategy(std::make_unique<StrategyBasicControl>());
-                break;
-            case 1:
-                model->setStrategy(std::make_unique<StrategyInstantDetection>());
-                break;
-            case 2:
-                model->setStrategy(std::make_unique<StrategyPreventiveWithControl>(10.0));
-                break;
-            case 3:
-                model->setStrategy(std::make_unique<StrategyFixedIntervalControl>(8.0));
-                break;
+            // циклически для демонстрации
+            switch (id % 4) {
+                case 0:
+                    model->setStrategy(std::make_unique<StrategyBasicControl>());
+                    break;
+                case 1:
+                    model->setStrategy(std::make_unique<StrategyInstantDetection>());
+                    break;
+                case 2:
+                    model->setStrategy(std::make_unique<StrategyPreventiveWithControl>(10.0));
+                    break;
+                case 3:
+                    model->setStrategy(std::make_unique<StrategyFixedIntervalControl>(8.0));
+                    break;
+            }
         }
 
         m_nodeModels.push_back(model);
@@ -513,14 +536,16 @@ void MainWindow::initializeSimulationModels() {
                 QString("Node-%1: стратегия %2").arg(id).arg(model->strategy() ? model->strategy()->name() : "None"));
     }
 
-    m_simulation = std::make_unique<SimulationEngine>(0.1, "exponential");
+    if (!m_simulation) {
+        m_simulation = std::make_unique<SimulationEngine>(0.1, "exponential");
+        m_simulation->setEventCallback([this](unsigned int nodeId, const std::string &event) {
+            Logger::event(nodeId, QString::fromStdString(event));
+        });
+    }
     m_simulation->setNodes(m_nodeModels);
 
-    m_simulation->setEventCallback([this](unsigned int nodeId, const std::string &event) {
-        Logger::event(nodeId, QString::fromStdString(event));
-    });
-
     Logger::info(QString("Готово: %1 узлов привязано").arg(m_nodeModels.size()));
+    graph.graphView->scene()->update();
 }
 
 void MainWindow::onSimulationStart() {
