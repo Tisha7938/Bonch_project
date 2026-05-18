@@ -6,13 +6,15 @@ Graph::Graph() : amount(0), adjacent(Matrix2D(0)), flow(Matrix2D(0)), bandwidth(
 }
 
 Graph::Graph(unsigned int size) :
-    amount(size), adjacent(Matrix2D(size, QList<double>(size, 0))), flow(Matrix2D(size, QList<double>(size, 0))) {
+    amount(size), adjacent(Matrix2D(size, QList<double>(size, 0))), flow(Matrix2D(size, QList<double>(size, 0))),
+    bandwidth(Matrix2D(size, QList<double>(size, 0))) {
     graphView = new GraphWidget(&edges, &nodes, &flags);
     Edge::setFlagsPtr(&flags);
 }
 
 Graph::Graph(Matrix2D &matrix) :
-    amount(matrix.size()), adjacent(matrix), flow(Matrix2D(amount, QList<double>(amount, 0))) {
+    amount(matrix.size()), adjacent(matrix), flow(Matrix2D(amount, QList<double>(amount, 0))),
+    bandwidth(Matrix2D(amount, QList<double>(amount, 0))) {
     graphView = new GraphWidget(&edges, &nodes, &flags);
     Edge::setFlagsPtr(&flags);
     // create nodes accoring to matrix size
@@ -20,8 +22,7 @@ Graph::Graph(Matrix2D &matrix) :
         nodes[i] = new Node(i, graphView);
     }
 
-
-    // create edges with edge type definition
+           // create edges with edge type definition
     for (unsigned int i = 0; i != amount; i++) {
         for (unsigned int j = i; j != amount; j++) {
             if (i != j) {
@@ -33,7 +34,7 @@ Graph::Graph(Matrix2D &matrix) :
                     edge1 = new Edge(nodes[i], nodes[j], matrix[i][j], EdgeType::BiDirectionalDiff);
                     edge2 = new Edge(nodes[j], nodes[i], matrix[j][i], EdgeType::BiDirectionalDiff);
 
-                } else if (matrix[i][j] != 0 && matrix[j][j] == 0) {
+                } else if (matrix[i][j] != 0 && matrix[j][i] == 0) {
                     edge1 = new Edge(nodes[i], nodes[j], matrix[i][j], EdgeType::SingleDirection);
 
                 } else if (matrix[j][i] != 0 && matrix[i][j] == 0) {
@@ -59,14 +60,11 @@ Graph::~Graph() {
     }
 }
 
+const Matrix2D Graph::getMatrixAdjacent() const { return adjacent; }
+const Matrix2D Graph::getMatrixFlow() const { return flow; }
+const Matrix2D Graph::getMatrixBandwidth() const { return bandwidth; }
 
-const Matrix2D Graph::getMatrixAdjacent() { return adjacent; }
-
-const Matrix2D Graph::getMatrixFlow() { return flow; }
-
-const Matrix2D Graph::getMatrixBandwidth() { return bandwidth; }
-
-const QList<QVariantList> Graph::getListEdges() {
+const QList<QVariantList> Graph::getListEdges() const {
     QList<QVariantList> edgeList(edges.size());
     unsigned int i = 0;
     for (auto [key, edge]: edges.asKeyValueRange()) {
@@ -76,7 +74,6 @@ const QList<QVariantList> Graph::getListEdges() {
     }
     return edgeList;
 }
-
 
 void Graph::setMatrixAdjacent(Matrix2D &matrix) {
     unsigned int i, j;
@@ -217,7 +214,7 @@ void Graph::setMatrixBandwidth(Matrix2D &matrix) {
                     edge->setFlow(matrix[j][i]);
                     unsavedChanges = true;
                 }
-                edge->setEdgeType(getEdgeType(i, j, matrix));
+                edge->setEdgeType(getEdgeType(j, i, matrix));
             }
             bandwidth[i][j] = matrix[i][j];
             bandwidth[j][i] = matrix[j][i];
@@ -329,37 +326,33 @@ void Graph::addNode(unsigned int i) {
     nodes[i] = new Node(i, graphView);
     short adjacentIsLess = adjacent.capacity() < amount + 1;
     short flowIsLess = flow.capacity() < amount + 1;
-    if (adjacentIsLess || flowIsLess) {
+    short bandwidthIsLess = bandwidth.capacity() < amount + 1;
+    if (adjacentIsLess || flowIsLess || bandwidthIsLess) {
         if (adjacentIsLess)
             adjacent.resize(amount + 1);
         if (flowIsLess)
             flow.resize(amount + 1);
+        if (bandwidthIsLess)
+            bandwidth.resize(amount + 1);
         for (unsigned int j = 0; j != amount + 1; j++) {
             if (adjacentIsLess)
                 adjacent[j].resize(amount + 1);
             if (flowIsLess)
                 flow[j].resize(amount + 1);
+            if (bandwidthIsLess)
+                bandwidth[j].resize(amount + 1);
         }
     }
 }
 
 const QFlags<GraphFlags> Graph::getFlags() { return flags; }
 
-void Graph::setFlag(GraphFlags flag) { flags |= flag; }
-
-void Graph::setFlags(QFlags<GraphFlags> flags) { this->flags = flags; }
-
-void Graph::unsetFlag(GraphFlags flag) { this->flags &= (~flag); }
-
-void Graph::toggleFlag(GraphFlags flag) { this->flags ^= flag; }
-
-unsigned int Graph::getAmount() { return this->amount; }
+unsigned int Graph::getAmount() const { return this->amount; }
 
 void Graph::resizeGraph(unsigned int oldAmount, unsigned int newAmount) {
     unsigned int i, j;
     bool newAmountIsLess = oldAmount > newAmount;
     bool needResize = amount != newAmount;
-    // increase nodes amount
     if (needResize) {
         amount = newAmount;
         adjacent.resize(newAmount);
@@ -391,4 +384,21 @@ void Graph::resizeGraph(unsigned int oldAmount, unsigned int newAmount) {
                 nodes[i] = new Node(i, graphView);
             }
     }
+}
+
+// ИСПРАВЛЕНИЕ 2: Безопасное использование флагов QFlags для Qt 6
+void Graph::setFlag(GraphFlags flag) {
+    this->flags.setFlag(flag, true);
+}
+
+void Graph::setFlags(QFlags<GraphFlags> flags) {
+    this->flags = flags;
+}
+
+void Graph::unsetFlag(GraphFlags flag) {
+    this->flags.setFlag(flag, false);
+}
+
+void Graph::toggleFlag(GraphFlags flag) {
+    this->flags.setFlag(flag, !this->flags.testFlag(flag));
 }

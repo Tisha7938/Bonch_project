@@ -2,12 +2,28 @@
 
 #include <QGraphicsItem>
 #include <QList>
+#include <QSet>
+#include <QString>
+#include "nodemodel.h"
 
-#define nodeSize 35
+#define nodeSize 44
 #define strokeWidth 1
+
 class Edge;
 class GraphWidget;
+class Node;
 
+// --- Класс-контейнер с информацией об узле ---
+class NodeData {
+public:
+    NodeData() : test1(""), test2(""), test3("") {}
+
+    QString test1;
+    QString test2;
+    QString test3;
+};
+
+// --- Класс узла графа ---
 class Node : public QGraphicsItem {
 public:
     Node(int index, GraphWidget *graphWidget);
@@ -32,15 +48,21 @@ public:
     int getIndex();
     void setIndex(unsigned int);
 
+    //! @brief Привязать чистую модель к графическому элементу
+    void bindModel(NodeModel *model);
+
+    //! @brief Получить привязанную модель
+    NodeModel *model() const { return m_model; }
+
     Node &operator=(const Node &);
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) override;
-    void extracted();
     ~Node();
+
     QSet<Edge *> edgeList;
+    NodeData nodeData;
 
 protected:
     QVariant itemChange(GraphicsItemChange change, const QVariant &value) override;
-
     void mousePressEvent(QGraphicsSceneMouseEvent *event) override;
     void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) override;
 
@@ -51,4 +73,6 @@ private:
     QPointF newPos;
     GraphWidget *graph;
     int index;
+
+    NodeModel *m_model = nullptr;
 };

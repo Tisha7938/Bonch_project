@@ -1,13 +1,12 @@
 #pragma once
 #include <QGraphicsItem>
-#include "../enums/graphenums.h"
+#include "../core/enums/graphenums.h"
 #define txtOffset 15
 #define curvines 25
 class Node;
 class Edge : public QGraphicsItem {
 public:
     Edge(Node *sourceNode, Node *destNode, double weight, EdgeType edgeType);
-    Edge(Node *sourceNode, Node *destNode, double weight, double flow, EdgeType edgeType);
     Node *sourceNode() const;
     Node *destNode() const;
     // setters
