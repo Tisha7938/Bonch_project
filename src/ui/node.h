@@ -56,7 +56,6 @@ public:
 
     Node &operator=(const Node &);
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) override;
-    void extracted();
     ~Node();
 
     QSet<Edge *> edgeList;

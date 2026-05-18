@@ -2,3 +2,5 @@
 *.user.*
 build/
 build-*/
+build_and_run.bat
+run.bat

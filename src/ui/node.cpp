@@ -108,8 +108,8 @@ QSet<Node *> Node::getParents() { return this->parents; }
 
 QRectF Node::boundingRect() const {
     qreal adjust = 2;
-    return QRectF(-nodeSize / 2 - adjust, -nodeSize / 2 - adjust, nodeSize + strokeWidth + adjust,
-                  nodeSize + strokeWidth + adjust);
+    return QRectF(-nodeSize / 2 - adjust, -nodeSize / 2 - adjust, nodeSize + strokeWidth + 2 * adjust,
+                  nodeSize + strokeWidth + 2 * adjust);
 }
 
 QPainterPath Node::shape() const {

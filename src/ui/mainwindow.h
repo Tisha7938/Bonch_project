@@ -1,11 +1,9 @@
 #pragma once
 
 #include <QDockWidget>
-#include <QFileDialog>
 #include <QList>
 #include <QMainWindow>
 #include <QMap>
-#include <QTextStream>
 #include "graph.h"
 #include "qactiongroup.h"
 #include "qpushbutton.h"
@@ -88,6 +86,6 @@ private:
     std::unique_ptr<SimulationEngine> m_simulation;
     std::vector<std::shared_ptr<NodeModel>> m_nodeModels;
 
-    ReliabilityWidget* m_reliabilityWidget;
-    QDockWidget* dock_Reliability;
+    ReliabilityWidget* m_reliabilityWidget = nullptr;
+    QDockWidget* dock_Reliability = nullptr;
 };

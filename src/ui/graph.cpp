@@ -6,13 +6,15 @@ Graph::Graph() : amount(0), adjacent(Matrix2D(0)), flow(Matrix2D(0)), bandwidth(
 }
 
 Graph::Graph(unsigned int size) :
-    amount(size), adjacent(Matrix2D(size, QList<double>(size, 0))), flow(Matrix2D(size, QList<double>(size, 0))) {
+    amount(size), adjacent(Matrix2D(size, QList<double>(size, 0))), flow(Matrix2D(size, QList<double>(size, 0))),
+    bandwidth(Matrix2D(size, QList<double>(size, 0))) {
     graphView = new GraphWidget(&edges, &nodes, &flags);
     Edge::setFlagsPtr(&flags);
 }
 
 Graph::Graph(Matrix2D &matrix) :
-    amount(matrix.size()), adjacent(matrix), flow(Matrix2D(amount, QList<double>(amount, 0))) {
+    amount(matrix.size()), adjacent(matrix), flow(Matrix2D(amount, QList<double>(amount, 0))),
+    bandwidth(Matrix2D(amount, QList<double>(amount, 0))) {
     graphView = new GraphWidget(&edges, &nodes, &flags);
     Edge::setFlagsPtr(&flags);
     // create nodes accoring to matrix size
@@ -32,7 +34,7 @@ Graph::Graph(Matrix2D &matrix) :
                     edge1 = new Edge(nodes[i], nodes[j], matrix[i][j], EdgeType::BiDirectionalDiff);
                     edge2 = new Edge(nodes[j], nodes[i], matrix[j][i], EdgeType::BiDirectionalDiff);
 
-                } else if (matrix[i][j] != 0 && matrix[j][j] == 0) {
+                } else if (matrix[i][j] != 0 && matrix[j][i] == 0) {
                     edge1 = new Edge(nodes[i], nodes[j], matrix[i][j], EdgeType::SingleDirection);
 
                 } else if (matrix[j][i] != 0 && matrix[i][j] == 0) {
@@ -212,7 +214,7 @@ void Graph::setMatrixBandwidth(Matrix2D &matrix) {
                     edge->setFlow(matrix[j][i]);
                     unsavedChanges = true;
                 }
-                edge->setEdgeType(getEdgeType(i, j, matrix));
+                edge->setEdgeType(getEdgeType(j, i, matrix));
             }
             bandwidth[i][j] = matrix[i][j];
             bandwidth[j][i] = matrix[j][i];
@@ -324,16 +326,21 @@ void Graph::addNode(unsigned int i) {
     nodes[i] = new Node(i, graphView);
     short adjacentIsLess = adjacent.capacity() < amount + 1;
     short flowIsLess = flow.capacity() < amount + 1;
-    if (adjacentIsLess || flowIsLess) {
+    short bandwidthIsLess = bandwidth.capacity() < amount + 1;
+    if (adjacentIsLess || flowIsLess || bandwidthIsLess) {
         if (adjacentIsLess)
             adjacent.resize(amount + 1);
         if (flowIsLess)
             flow.resize(amount + 1);
+        if (bandwidthIsLess)
+            bandwidth.resize(amount + 1);
         for (unsigned int j = 0; j != amount + 1; j++) {
             if (adjacentIsLess)
                 adjacent[j].resize(amount + 1);
             if (flowIsLess)
                 flow[j].resize(amount + 1);
+            if (bandwidthIsLess)
+                bandwidth[j].resize(amount + 1);
         }
     }
 }

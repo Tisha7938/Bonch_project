@@ -44,15 +44,13 @@ void ReliabilityWidget::setupUI() {
     m_sinkSpin->setFixedWidth(60);
     controlLayout->addWidget(m_sinkSpin);
 
-    m_analyzeBtn = new QPushButton("🔍", this);
-    m_analyzeBtn->setFixedWidth(50);
-    m_analyzeBtn->setFixedHeight(50);
+    m_analyzeBtn = new QPushButton("Анализ", this);
+    m_analyzeBtn->setFixedHeight(30);
     m_analyzeBtn->setToolTip("Анализировать");
     controlLayout->addWidget(m_analyzeBtn);
 
-    m_exportBtn = new QPushButton("💾", this);
-    m_exportBtn->setFixedWidth(50);
-    m_exportBtn->setFixedHeight(50);
+    m_exportBtn = new QPushButton("Экспорт", this);
+    m_exportBtn->setFixedHeight(30);
     m_exportBtn->setToolTip("Экспорт");
     controlLayout->addWidget(m_exportBtn);
 
@@ -130,6 +128,7 @@ void ReliabilityWidget::onAnalyzeClicked() {
 }
 
 void ReliabilityWidget::analyzeNetwork(unsigned int source, unsigned int sink) {
+    m_analyzer = std::make_unique<NetworkAnalyzer>(*m_graph);
     auto result = m_analyzer->analyze(source, sink);
     displayResults(result);
     m_infoLabel->setText(QString("Анализ завершён: %1 путей, %2 сечений")

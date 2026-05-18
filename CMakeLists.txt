@@ -88,8 +88,6 @@ set(RELIABILITY_HEADERS
         src/core/reliability/logicalforms.h
         src/core/reliability/networkanalyzer.h
         src/ui/reliabilitywidget.h
-        src/core/reliability/pathfinder.cpp
-        src/core/reliability/pathfinder.h
 )
 
 set(RELIABILITY_SOURCES
@@ -97,8 +95,6 @@ set(RELIABILITY_SOURCES
         src/core/reliability/logicalforms.cpp
         src/core/reliability/networkanalyzer.cpp
         src/ui/reliabilitywidget.cpp
-        src/core/reliability/pathfinder.cpp
-        src/core/reliability/pathfinder.h
 )
 
 add_executable(final_project

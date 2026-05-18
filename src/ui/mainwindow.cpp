@@ -91,6 +91,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     connect(ui->actionDeleteNode, &QAction::triggered, this, [this]() {
         if (graph.getAmount() > 0) {
             saveState();
+            nodeSidebar->setNode(nullptr);
             int newAmount = graph.getAmount() - 1;
             graph.resizeGraph(graph.getAmount(), newAmount);
             initializeSimulationModels();
@@ -104,6 +105,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
     connect(ui->actionDeleteGraph, &QAction::triggered, this, [this]() {
         saveState();
+        nodeSidebar->setNode(nullptr);
         graph.resizeGraph(graph.getAmount(), 0);
         initializeSimulationModels();
         graph.graphView->scene()->update();
@@ -269,8 +271,12 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         }
     });
 
+    Logger::registerCallback([this](const QString &msg) {
+        ui->textEdit_Console->appendPlainText(msg);
+    });
+
     initializeSimulationModels();
-    dock_Reliability = new QDockWidget(this);
+    dock_Reliability = new QDockWidget("Анализ связности", this);
     dock_Reliability->setObjectName("dock_Reliability");
     dock_Reliability->setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable);
     dock_Reliability->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::BottomDockWidgetArea);
@@ -290,7 +296,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         }
     }
     dock_Reliability->raise();
-    auto *reliabilityAct = new QAction("ДНФ/КНФ", this);
+    auto *reliabilityAct = new QAction("Анализ связности", this);
     reliabilityAct->setCheckable(true);
     reliabilityAct->setChecked(true);
     connect(reliabilityAct, &QAction::triggered, this, [this](bool checked) {
@@ -351,6 +357,7 @@ void MainWindow::saveState() {
 }
 
 void MainWindow::restoreState(const GraphState &state) {
+    nodeSidebar->setNode(nullptr);
     graph.resizeGraph(graph.getAmount(), state.amount);
     graph.setMatrixAdjacent(const_cast<Matrix2D &>(state.adj));
     graph.setMatrixFlow(const_cast<Matrix2D &>(state.flow));
