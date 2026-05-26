@@ -14,3 +14,6 @@ IMaintenanceStrategy *NodeModel::strategy() const { return m_strategy.get(); }
 void NodeModel::addMessage(const std::string &msg) { m_inbox.push_back(msg); }
 const std::vector<std::string> &NodeModel::inbox() const { return m_inbox; }
 void NodeModel::clearInbox() { m_inbox.clear(); }
+void NodeModel::changeStrategy(std::unique_ptr<IMaintenanceStrategy> newStrategy) {
+    m_strategy = std::move(newStrategy);
+}

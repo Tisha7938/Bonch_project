@@ -27,6 +27,8 @@ public:
     const std::vector<std::string> &inbox() const;
     void clearInbox();
 
+    void changeStrategy(std::unique_ptr<IMaintenanceStrategy> newStrategy);
+
 private:
     unsigned int m_id;
     State m_state;
