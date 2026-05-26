@@ -50,6 +50,7 @@ void SimulationEngine::reset() {
     m_totalDowntime = 0.0;
     m_nodeStats.clear();
     m_maintenanceEndTimes.clear();
+    m_reliabilityHistory.clear();
     for (const auto &node: m_nodes) {
         node->setState(NodeModel::State::Operational);
         node->setReliability(1.0);
@@ -101,6 +102,10 @@ void SimulationEngine::step() {
 
     m_currentTime += m_dt;
 
+    if (m_recordHistory) {
+        m_reliabilityHistory.push_back({m_currentTime, getGlobalAvailability()});
+    }
+
     Logger::step(m_currentTime, getGlobalAvailability());
 
     if (m_stepCallback) {
@@ -124,17 +129,18 @@ void SimulationEngine::processNode(NodeModel &node) {
         auto &stats = m_nodeStats[node.id()];
         stats.downtime += m_dt;
 
-        // TODO: восстановление за один такт. В реальной системе здесь был бы таймер восстановления - потом добавить (мейби)
+        // TODO: восстановление за один такт. В реальной системе здесь был бы таймер восстановления - потом добавить
+        // (мейби)
         if (state == NodeModel::State::Failed) {
             handleRecovery(node);
-        }
-        else if (state == NodeModel::State::Maintenance) {
+        } else if (state == NodeModel::State::Maintenance) {
             auto it = m_maintenanceEndTimes.find(node.id());
             if (it != m_maintenanceEndTimes.end() && m_currentTime >= it->second) {
                 node.setState(NodeModel::State::Operational);
                 node.setReliability(1.0); // После профилактики надежность восстанавливается полностью
                 m_bus.sendTo(node.id(), "MAINT_COMPLETE");
-                if (m_eventCallback) m_eventCallback(node.id(), "MAINT_COMPLETE");
+                if (m_eventCallback)
+                    m_eventCallback(node.id(), "MAINT_COMPLETE");
                 m_maintenanceEndTimes.erase(it);
             }
         }
@@ -150,7 +156,8 @@ void SimulationEngine::processNode(NodeModel &node) {
         stats.maintenanceCount++;
 
         m_bus.sendTo(node.id(), "MAINT_START");
-        if (m_eventCallback) m_eventCallback(node.id(), "MAINTENANCE");
+        if (m_eventCallback)
+            m_eventCallback(node.id(), "MAINTENANCE");
         return;
     }
 

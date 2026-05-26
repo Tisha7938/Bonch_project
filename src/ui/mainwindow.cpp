@@ -271,24 +271,34 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         }
     });
 
-    Logger::registerCallback([this](const QString &msg) {
-        ui->textEdit_Console->appendPlainText(msg);
-    });
+    Logger::registerCallback([this](const QString &msg) { ui->textEdit_Console->appendPlainText(msg); });
 
     initializeSimulationModels();
-    dock_Reliability = new QDockWidget("Анализ связности", this);
-    dock_Reliability->setObjectName("dock_Reliability");
-    dock_Reliability->setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable);
-    dock_Reliability->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::BottomDockWidgetArea);
+    m_resultsTabs = new QTabWidget(this);
+    m_resultsTabs->setObjectName("resultsTabs");
+    m_resultsTabs->setTabsClosable(false);
 
     m_reliabilityWidget = new ReliabilityWidget(this);
     m_reliabilityWidget->setGraph(&graph);
-    dock_Reliability->setWidget(m_reliabilityWidget);
+    m_resultsTabs->addTab(m_reliabilityWidget, "🔍 Структурный анализ");
+
+    m_chartWidget = new ReliabilityChartWidget(this);
+    m_resultsTabs->addTab(m_chartWidget, "📈 График надёжности");
+
+    m_resultsTabs->setTabEnabled(1, false);
+    m_resultsTabs->setTabToolTip(1, "Доступно после остановки симуляции");
+
+    dock_Reliability = new QDockWidget("Результаты анализа", this);
+    dock_Reliability->setObjectName("dock_Reliability");
+    dock_Reliability->setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable);
+    dock_Reliability->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::BottomDockWidgetArea);
+    dock_Reliability->setWidget(m_resultsTabs);
 
     this->addDockWidget(Qt::LeftDockWidgetArea, dock_Reliability);
 
+    // Приклеиваем после последней матрицы (чтобы был внизу слева)
     if (!graphMatrixViews.isEmpty()) {
-        for (auto *dock : findChildren<QDockWidget*>()) {
+        for (auto *dock: findChildren<QDockWidget *>()) {
             if (dock->widget() == graphMatrixViews.last()) {
                 this->tabifyDockWidget(dock, dock_Reliability);
                 break;
@@ -296,12 +306,12 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         }
     }
     dock_Reliability->raise();
-    auto *reliabilityAct = new QAction("Анализ связности", this);
+
+    // Действие в меню для управления видимостью
+    auto *reliabilityAct = new QAction("Результаты анализа", this);
     reliabilityAct->setCheckable(true);
     reliabilityAct->setChecked(true);
-    connect(reliabilityAct, &QAction::triggered, this, [this](bool checked) {
-        dock_Reliability->setVisible(checked);
-    });
+    connect(reliabilityAct, &QAction::triggered, this, [this](bool checked) { dock_Reliability->setVisible(checked); });
     ui->menuView_mode->addAction(reliabilityAct);
 }
 
@@ -576,6 +586,7 @@ void MainWindow::syncSimulationModelsWithGraph() {
         m_simulation->setEventCallback([this](unsigned int nodeId, const std::string &event) {
             Logger::event(nodeId, QString::fromStdString(event));
         });
+        m_simulation->setRecordHistory(true);
     }
     m_simulation->setNodes(m_nodeModels);
 
@@ -595,6 +606,13 @@ void MainWindow::onSimulationStart() {
             return;
     }
 
+    if (m_resultsTabs) {
+        m_resultsTabs->setTabEnabled(1, false);
+        m_resultsTabs->setTabToolTip(1, "Доступно после остановки симуляции");
+        if (m_chartWidget)
+            m_chartWidget->clear();
+    }
+
     Logger::info("Запуск имитационного моделирования");
     m_simulation->start();
     m_simTimer->start();
@@ -609,6 +627,14 @@ void MainWindow::onSimulationStop() {
     if (m_simulation) {
         m_simulation->stop();
         m_simTimer->stop();
+
+        if (m_chartWidget && m_simulation) {
+            m_chartWidget->updateChart(m_simulation.get());
+            m_resultsTabs->setTabEnabled(1, true);
+            m_resultsTabs->setTabToolTip(1, "");
+            m_resultsTabs->setCurrentIndex(1);
+        }
+
         setUndoRedoEnabled(true);
         ui->actionSimulation->setText("Start Simulation");
         ui->actionSimulation->setIcon(style()->standardIcon(QStyle::SP_MediaPlay));
@@ -620,7 +646,10 @@ void MainWindow::onSimulationStop() {
         ui->textEdit_Console->appendPlainText(
                 QString("Симуляция остановлена. Коэффициент готовности: %1").arg(avail, 0, 'f', 4));
     }
+    onSimulationStopped();
 }
+
+void MainWindow::onSimulationStopped() { Logger::info("Пост-обработка после остановки симуляции"); }
 
 template<typename T>
 void MainWindow::setTableFromMatrix(QTableView *table, T &matrix, int h, int w) {

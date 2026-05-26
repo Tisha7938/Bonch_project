@@ -1,13 +1,18 @@
 #pragma once
 
 #include <functional>
+#include <map>
 #include <memory>
 #include <vector>
 #include "messagebus.h"
 #include "neuralsystememulator.h"
 #include "nodemodel.h"
-#include <map>
 
+
+struct ReliabilityPoint {
+    double timestamp;
+    double availability;
+};
 
 //! @brief Двигатель имитационного моделирования надёжности сети
 //!
@@ -51,6 +56,15 @@ public:
     //! @brief Доступ к шине сообщений (для отладки/расширения)
     MessageBus &messageBus();
 
+    //! @brief Включить/выключить запись истории надёжности
+    void setRecordHistory(bool enabled) { m_recordHistory = enabled; }
+
+    //! @brief Получить историю надёжности для построения графика
+    const std::vector<ReliabilityPoint> &getReliabilityHistory() const { return m_reliabilityHistory; }
+
+    //! @brief Очистить историю (перед новым запуском)
+    void clearReliabilityHistory() { m_reliabilityHistory.clear(); }
+
 private:
     //! @brief Обработка состояния одной вершины на такте
     void processNode(NodeModel &node);
@@ -85,4 +99,7 @@ private:
 
     StepCallback m_stepCallback;
     EventCallback m_eventCallback;
+
+    std::vector<ReliabilityPoint> m_reliabilityHistory;
+    bool m_recordHistory = false;
 };

@@ -9,7 +9,7 @@ set(CMAKE_AUTOUIC ON)
 
 set(CMAKE_AUTOUIC_SEARCH_PATHS ${CMAKE_SOURCE_DIR}/src/ui)
 
-find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets)
+find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Charts)
 
 set(CORE_SOURCES
         src/core/model/messagebus.cpp
@@ -28,6 +28,8 @@ set(UI_SOURCES
         src/ui/node.cpp
         src/ui/edge.cpp
         src/ui/nodeinfowidget.cpp
+        src/ui/reliabilitychart.cpp
+        src/ui/reliabilitychart.h
 )
 set(UI_HEADERS
         src/ui/mainwindow.h
@@ -37,6 +39,8 @@ set(UI_HEADERS
         src/ui/edge.h
         src/ui/nodeinfowidget.h
         src/core/enums/graphenums.h
+        src/ui/reliabilitychart.cpp
+        src/ui/reliabilitychart.h
 )
 set(UI_FORMS
         src/ui/mainwindow.ui
@@ -117,6 +121,7 @@ target_link_libraries(final_project PRIVATE
         Qt6::Core
         Qt6::Gui
         Qt6::Widgets
+        Qt6::Charts
 )
 
 target_include_directories(final_project PRIVATE

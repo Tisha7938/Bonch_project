@@ -10,14 +10,17 @@
 #include "qshortcut.h"
 #include "qspinbox.h"
 #include "qtableview.h"
-#include "simulationengine.h"
+#include "reliabilitychart.h"
 #include "reliabilitywidget.h"
+#include "simulationengine.h"
 
 // Форвард-декларация
 class NodeInfoWidget;
 
 QT_BEGIN_NAMESPACE
-namespace Ui { class MainWindow; }
+namespace Ui {
+    class MainWindow;
+}
 QT_END_NAMESPACE
 
 struct GraphState {
@@ -27,8 +30,7 @@ struct GraphState {
     Matrix2D band;
 };
 
-class MainWindow : public QMainWindow
-{
+class MainWindow : public QMainWindow {
     Q_OBJECT
 
 public:
@@ -45,6 +47,7 @@ private slots:
     void saveToFile();
     void onSimulationStart();
     void onSimulationStop();
+    void onSimulationStopped();
 
 private:
     Ui::MainWindow *ui;
@@ -55,7 +58,7 @@ private:
     QList<GraphState> redoStack;
     GraphState captureState();
     void saveState();
-    void restoreState(const GraphState& state);
+    void restoreState(const GraphState &state);
     void setUndoRedoEnabled(bool enabled);
 
     void unpinTab(int index);
@@ -78,14 +81,17 @@ private:
     QList<QTableView *> graphListViews;
     QMap<QString, QSpinBox *> graphCountSpins;
 
-           // --- Указатели для новой боковой панели ---
+    // --- Указатели для новой боковой панели ---
     QDockWidget *dock_NodeInfo;
     NodeInfoWidget *nodeSidebar;
 
-    QTimer* m_simTimer = nullptr;
+    QTimer *m_simTimer = nullptr;
     std::unique_ptr<SimulationEngine> m_simulation;
     std::vector<std::shared_ptr<NodeModel>> m_nodeModels;
 
-    ReliabilityWidget* m_reliabilityWidget = nullptr;
-    QDockWidget* dock_Reliability = nullptr;
+    ReliabilityWidget *m_reliabilityWidget = nullptr;
+    QDockWidget *dock_Reliability = nullptr;
+
+    QTabWidget *m_resultsTabs;
+    ReliabilityChartWidget *m_chartWidget;
 };
