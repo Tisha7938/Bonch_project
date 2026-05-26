@@ -20,5 +20,6 @@ bool StrategyOfflineCheck::checkMaintenance(double timeElapsed) {
 }
 
 void StrategyOfflineCheck::setCheckPeriod(double period) { m_checkPeriod = period; }
-
+double StrategyOfflineCheck::getCheckPeriod() const { return m_checkPeriod; }
 void StrategyOfflineCheck::setCheckWindow(double window) { m_checkWindow = window; }
+double StrategyOfflineCheck::getCheckWindow() const { return m_checkWindow; }

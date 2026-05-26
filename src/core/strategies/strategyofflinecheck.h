@@ -16,7 +16,9 @@ public:
     const char *name() const override { return "2.4 Профилактика с отключением при проверке"; }
 
     void setCheckPeriod(double period);
+    double getCheckPeriod() const;
     void setCheckWindow(double window);
+    double getCheckWindow() const;
 
 private:
     double m_checkPeriod;
