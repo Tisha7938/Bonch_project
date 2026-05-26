@@ -1,14 +1,13 @@
 #include "reliabilitywidget.h"
-#include "../core/reliability/networkanalyzer.h"
-#include "graph.h"
 #include <QFile>
 #include <QFileDialog>
 #include <QMessageBox>
 #include <QTextStream>
+#include "../core/reliability/networkanalyzer.h"
+#include "graph.h"
+#include "mainwindow.h"
 
-ReliabilityWidget::ReliabilityWidget(QWidget *parent) : QWidget(parent) {
-    setupUI();
-}
+ReliabilityWidget::ReliabilityWidget(QWidget *parent) : QWidget(parent) { setupUI(); }
 
 void ReliabilityWidget::setGraph(Graph *graph) {
     m_graph = graph;
@@ -53,6 +52,21 @@ void ReliabilityWidget::setupUI() {
     m_exportBtn->setFixedHeight(30);
     m_exportBtn->setToolTip("Экспорт");
     controlLayout->addWidget(m_exportBtn);
+
+    auto *footer = new QHBoxLayout();
+    footer->setContentsMargins(0, 4, 0, 0);
+
+    auto *saveResultsBtn = new QPushButton("💾 Сохранить итоги", this);
+    saveResultsBtn->setToolTip("Сохранить статистику по узлам в CSV");
+    connect(saveResultsBtn, &QPushButton::clicked, this, &ReliabilityWidget::onSaveResultsClicked);
+    footer->addWidget(saveResultsBtn);
+
+    footer->addStretch();
+    mainLayout->addLayout(footer); // <-- Добавляем footer в основной лейаут
+
+    connect(m_analyzeBtn, &QPushButton::clicked, this, &ReliabilityWidget::onAnalyzeClicked);
+    connect(m_exportBtn, &QPushButton::clicked, this, &ReliabilityWidget::onExportClicked);
+
 
     controlLayout->addStretch();
     mainLayout->addWidget(controlGroup);
@@ -132,19 +146,19 @@ void ReliabilityWidget::analyzeNetwork(unsigned int source, unsigned int sink) {
     auto result = m_analyzer->analyze(source, sink);
     displayResults(result);
     m_infoLabel->setText(QString("Анализ завершён: %1 путей, %2 сечений")
-        .arg(result.minimalPaths.size())
-        .arg(result.minimalCuts.size()));
+                                 .arg(result.minimalPaths.size())
+                                 .arg(result.minimalCuts.size()));
 }
 
-void ReliabilityWidget::displayResults(const NetworkAnalysisResult& result) {
+void ReliabilityWidget::displayResults(const NetworkAnalysisResult &result) {
     m_pathsEdit->clear();
-    for (const auto& p : result.minimalPaths)
+    for (const auto &p: result.minimalPaths)
         m_pathsEdit->append(QString::fromStdString(p.toString()));
 
     m_dnfEdit->setText(QString::fromStdString(result.dnf));
 
     m_cutsEdit->clear();
-    for (const auto& c : result.minimalCuts)
+    for (const auto &c: result.minimalCuts)
         m_cutsEdit->append(QString::fromStdString(c.toString()));
 
     m_cnfEdit->setText(QString::fromStdString(result.cnf));
@@ -152,7 +166,8 @@ void ReliabilityWidget::displayResults(const NetworkAnalysisResult& result) {
 
 void ReliabilityWidget::onExportClicked() {
     const QString fileName = QFileDialog::getSaveFileName(this, "Экспорт результатов", "", "Text Files (*.txt)");
-    if (fileName.isEmpty()) return;
+    if (fileName.isEmpty())
+        return;
 
     QFile file(fileName);
     if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
@@ -169,4 +184,46 @@ void ReliabilityWidget::onExportClicked() {
 
     file.close();
     QMessageBox::information(this, "Успех", "Отчёт сохранён: " + fileName);
+}
+
+void ReliabilityWidget::onSaveResultsClicked() {
+    auto *mainWindow = qobject_cast<MainWindow *>(window());
+    if (!mainWindow) {
+        QMessageBox::warning(this, "Ошибка", "Не удалось получить доступ к основному окну.");
+        return;
+    }
+
+    if (!mainWindow->m_simulation || mainWindow->m_simulation->isRunning()) {
+        QMessageBox::warning(this, "Предупреждение",
+                             "Симуляция должна быть остановлена перед сохранением результатов.");
+        return;
+    }
+
+    QString fileName = QFileDialog::getSaveFileName(this, "Сохранить результаты моделирования",
+                                                    "simulation_results.csv", "CSV Files (*.csv)");
+
+    if (fileName.isEmpty())
+        return;
+
+    if (!fileName.endsWith(".csv", Qt::CaseInsensitive)) {
+        fileName += ".csv";
+    }
+
+    if (mainWindow->saveSimulationResults(fileName)) {
+        QMessageBox::information(this, "Успех",
+                                 "Результаты успешно сохранены:\n" + fileName +
+                                         "\n\nФормат:\n"
+                                         "• NodeID — идентификатор узла\n"
+                                         "• Availability(%) — коэффициент готовности в процентах\n"
+                                         "• Runtime(s) — общее время работы (сек)\n"
+                                         "• Downtime(s) — общее время простоя (сек)\n"
+                                         "• Failures — количество отказов\n"
+                                         "• Maintenances — количество профилактик");
+    } else {
+        QMessageBox::critical(this, "Ошибка",
+                              "Не удалось сохранить файл.\n\nВозможные причины:\n"
+                              "• Нет прав на запись в папку\n"
+                              "• Файл открыт в другой программе\n"
+                              "• Недостаточно места на диске");
+    }
 }

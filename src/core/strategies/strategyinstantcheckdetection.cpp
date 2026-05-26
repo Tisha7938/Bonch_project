@@ -22,5 +22,6 @@ bool StrategyInstantCheckDetection::checkMaintenance(double timeElapsed) {
 }
 
 void StrategyInstantCheckDetection::setCheckPeriod(double period) { m_checkPeriod = period; }
-
+double StrategyInstantCheckDetection::getCheckPeriod() const { return m_checkPeriod; }
 void StrategyInstantCheckDetection::setCheckWindow(double window) { m_checkWindow = window; }
+double StrategyInstantCheckDetection::getCheckWindow() const { return m_checkWindow; }
