@@ -38,6 +38,11 @@ public:
     Graph graph;
     ~MainWindow();
 
+    //! @brief Сохранить результаты моделирования в файл
+    bool saveSimulationResults(const QString &fileName);
+    SimulationEngine *getSimulationEngine() const { return m_simulation.get(); }
+    std::unique_ptr<SimulationEngine> m_simulation;
+
 private slots:
     void buttonClearConsoleClicked();
     void viewModeChecked(bool checked);
@@ -86,7 +91,6 @@ private:
     NodeInfoWidget *nodeSidebar;
 
     QTimer *m_simTimer = nullptr;
-    std::unique_ptr<SimulationEngine> m_simulation;
     std::vector<std::shared_ptr<NodeModel>> m_nodeModels;
 
     ReliabilityWidget *m_reliabilityWidget = nullptr;

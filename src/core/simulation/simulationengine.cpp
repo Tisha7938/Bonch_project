@@ -1,4 +1,6 @@
 #include "simulationengine.h"
+
+#include <QFile>
 #include <algorithm>
 #include <random>
 #include "logger.h"
@@ -111,6 +113,91 @@ void SimulationEngine::step() {
     if (m_stepCallback) {
         m_stepCallback();
     }
+}
+
+std::vector<SimulationEngine::NodeFinalStats> SimulationEngine::getFinalStats() const {
+    std::vector<NodeFinalStats> stats;
+    stats.reserve(m_nodes.size());
+
+    for (const auto& node : m_nodes) {
+        NodeFinalStats s;
+        s.id = node->id();
+
+        auto it = m_nodeStats.find(node->id());
+        if (it != m_nodeStats.end()) {
+            const auto& ns = it->second;
+            double total = ns.runtime + ns.downtime;
+            s.availabilityPercent = (total > 0.0) ? (ns.runtime / total * 100.0) : 100.0;
+            s.totalRuntime = ns.runtime;
+            s.totalDowntime = ns.downtime;
+            s.failureCount = ns.failureCount;
+            s.maintenanceCount = ns.maintenanceCount;
+        } else {
+            s.availabilityPercent = 100.0;
+            s.totalRuntime = 0.0;
+            s.totalDowntime = 0.0;
+            s.failureCount = 0;
+            s.maintenanceCount = 0;
+        }
+
+        stats.push_back(s);
+    }
+
+    return stats;
+}
+
+bool SimulationEngine::exportStatsToCSV(const QString& fileName) const {
+    QFile file(fileName);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        return false;
+    }
+
+    QTextStream out(&file);
+
+    // Заголовок с кодировкой UTF-8 для корректного отображения кириллицы
+    out << "\xEF\xBB\xBF"; // BOM для UTF-8
+    out << "NodeID;Availability(%);Runtime(s);Downtime(s);Failures;Maintenances\n";
+
+    // Получаем статистику
+    auto stats = getFinalStats();
+
+    double totalAvailability = 0.0;
+    unsigned int totalFailures = 0;
+    unsigned int totalMaintenances = 0;
+
+    // Записываем данные по каждому узлу
+    for (const auto& s : stats) {
+        out << s.id << ";"
+            << QString::number(s.availabilityPercent, 'f', 2) << ";"
+            << QString::number(s.totalRuntime, 'f', 2) << ";"
+            << QString::number(s.totalDowntime, 'f', 2) << ";"
+            << s.failureCount << ";"
+            << s.maintenanceCount << "\n";
+
+        totalAvailability += s.availabilityPercent;
+        totalFailures += s.failureCount;
+        totalMaintenances += s.maintenanceCount;
+    }
+
+    // Добавляем строку с усреднёнными данными
+    if (!stats.empty()) {
+        double avgAvailability = totalAvailability / stats.size();
+        out << "\n# Сводные данные по сети:\n";
+        out << "AVERAGE_AVAILABILITY;" << QString::number(avgAvailability, 'f', 2) << "%\n";
+        out << "TOTAL_FAILURES;" << totalFailures << "\n";
+        out << "TOTAL_MAINTENANCES;" << totalMaintenances << "\n";
+        out << "NODES_COUNT;" << stats.size() << "\n";
+    }
+
+    file.close();
+
+    // Проверяем, что файл действительно записан
+    if (file.size() > 0) {
+        Logger::info(QString("Результаты сохранены: %1 (%2 байт)").arg(fileName).arg(file.size()));
+        return true;
+    }
+
+    return false;
 }
 
 void SimulationEngine::processNode(NodeModel &node) {

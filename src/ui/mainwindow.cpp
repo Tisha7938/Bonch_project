@@ -651,6 +651,22 @@ void MainWindow::onSimulationStop() {
 
 void MainWindow::onSimulationStopped() { Logger::info("Пост-обработка после остановки симуляции"); }
 
+bool MainWindow::saveSimulationResults(const QString &fileName) {
+
+
+    if (m_nodeModels.empty()) {
+        return false;
+    }
+
+    bool result = m_simulation->exportStatsToCSV(fileName);
+
+    if (result) {
+        Logger::info(QString("Экспорт завершён: %1").arg(fileName));
+    }
+
+    return result;
+}
+
 template<typename T>
 void MainWindow::setTableFromMatrix(QTableView *table, T &matrix, int h, int w) {
     auto *model = static_cast<QStandardItemModel *>(table->model());

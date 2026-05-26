@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QString>
 #include <functional>
 #include <map>
 #include <memory>
@@ -64,6 +65,22 @@ public:
 
     //! @brief Очистить историю (перед новым запуском)
     void clearReliabilityHistory() { m_reliabilityHistory.clear(); }
+
+    //! @brief Структура итоговой статистики по узлу
+    struct NodeFinalStats {
+        unsigned int id; //!< ID узла
+        double availabilityPercent; //!< Коэффициент готовности в %
+        double totalRuntime; //!< Общее время работы
+        double totalDowntime; //!< Общее время простоя
+        unsigned int failureCount; //!< Количество отказов
+        unsigned int maintenanceCount; //!< Количество профилактик
+    };
+
+    //! @brief Получить итоговую статистику по всем узлам
+    std::vector<NodeFinalStats> getFinalStats() const;
+
+    //! @brief Экспорт статистики в CSV
+    bool exportStatsToCSV(const QString &fileName) const;
 
 private:
     //! @brief Обработка состояния одной вершины на такте
