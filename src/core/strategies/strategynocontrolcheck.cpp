@@ -21,5 +21,6 @@ bool StrategyNoControlCheck::checkMaintenance(double timeElapsed) {
 }
 
 void StrategyNoControlCheck::setCheckPeriod(double period) { m_checkPeriod = period; }
-
+double StrategyNoControlCheck::getCheckPeriod() const { return m_checkPeriod; }
 void StrategyNoControlCheck::setCheckWindow(double window) { m_checkWindow = window; }
+double StrategyNoControlCheck::getCheckWindow() const { return m_checkWindow; }
