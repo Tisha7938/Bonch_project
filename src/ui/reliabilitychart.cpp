@@ -98,7 +98,29 @@ void ReliabilityChartWidget::updateChart(const SimulationEngine *engine) {
 
     if (!history.empty()) {
         m_axisX->setRange(0, history.back().timestamp);
-        m_axisY->setRange(0.0, 1.0);
+
+        double minVal = 1.0;
+        double maxVal = 0.0;
+        for (const auto &[timestamp, availability]: history) {
+            if (availability < minVal)
+                minVal = availability;
+            if (availability > maxVal)
+                maxVal = availability;
+        }
+
+        const double range = maxVal - minVal;
+        const double padding = (range > 0.0) ? range * 0.1 : 0.1;
+
+        double newYMin = std::max(0.0, minVal - padding);
+        double newYMax = std::min(1.0, maxVal + padding);
+
+        if (newYMax - newYMin < 0.2) {
+            const double center = (newYMin + newYMax) / 2.0;
+            newYMin = std::max(0.0, center - 0.1);
+            newYMax = std::min(1.0, center + 0.1);
+        }
+
+        m_axisY->setRange(newYMin, newYMax);
     }
 
     m_pointCount = static_cast<int>(history.size());
