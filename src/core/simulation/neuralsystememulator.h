@@ -1,5 +1,6 @@
 #pragma once
 
+#include <nodemodel.h>
 #include <random>
 #include <stdexcept>
 #include <string>
@@ -24,6 +25,10 @@ public:
 
     void setDistribution(Distribution dist);
     void setDistribution(const std::string &distMode);
+
+    double sampleFailureTime(NodeModel::DistributionType type, double expRate, double normMean, double normStd);
+    double sampleRecoveryTime(NodeModel::DistributionType type, double expRate, double normMean, double normStd);
+    double sampleMaintenanceTime(NodeModel::DistributionType type, double expRate, double normMean, double normStd);
 
 private:
     Distribution m_distType;

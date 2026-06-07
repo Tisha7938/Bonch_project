@@ -24,6 +24,23 @@ void NeuralSystemEmulator::setDistribution(const std::string &distMode) {
     }
 }
 
+double NeuralSystemEmulator::sampleFailureTime(NodeModel::DistributionType type, double expRate, double normMean,
+                                               double normStd) {
+    return generateFromDistribution((type == NodeModel::DistributionType::Exponential) ? Distribution::Exponential
+                                                                                       : Distribution::Normal,
+                                    expRate, 0, 0, normMean, normStd);
+}
+
+double NeuralSystemEmulator::sampleRecoveryTime(NodeModel::DistributionType type, double expRate, double normMean,
+                                                double normStd) {
+    return sampleFailureTime(type, expRate, normMean, normStd);
+}
+
+double NeuralSystemEmulator::sampleMaintenanceTime(NodeModel::DistributionType type, double expRate, double normMean,
+                                                   double normStd) {
+    return sampleRecoveryTime(type, expRate, normMean, normStd);
+}
+
 double NeuralSystemEmulator::generateFromDistribution(Distribution dist, double expRate, double weibullShape,
                                                       double weibullScale, double normMean, double normStd) {
 
