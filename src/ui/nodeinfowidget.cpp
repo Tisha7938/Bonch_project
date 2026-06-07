@@ -105,6 +105,51 @@ NodeInfoWidget::NodeInfoWidget(QWidget *parent) : QWidget(parent) {
     mainLayout->addWidget(paramsContainer);
     paramsContainer->hide();
 
+    m_distGroupBox = new QGroupBox("Распределение времени событий", this);
+    auto *distLayout = new QFormLayout(m_distGroupBox);
+    distLayout->setSpacing(6);
+
+    m_distTypeCombo = new QComboBox(this);
+    m_distTypeCombo->addItem("Экспоненциальное", static_cast<int>(NodeModel::DistributionType::Exponential));
+    m_distTypeCombo->addItem("Нормальное", static_cast<int>(NodeModel::DistributionType::Normal));
+    connect(m_distTypeCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+            &NodeInfoWidget::onDistributionTypeChanged);
+
+    m_expRateSpin = new QDoubleSpinBox(this);
+    m_expRateSpin->setRange(0.01, 10.0);
+    m_expRateSpin->setSingleStep(0.01);
+    m_expRateSpin->setDecimals(2);
+    m_expRateSpin->setValue(0.1);
+    m_expRateSpin->setToolTip("λ: интенсивность (среднее время = 1/λ)");
+    connect(m_expRateSpin, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
+            &NodeInfoWidget::onDistributionParamsChanged);
+
+    m_normMeanSpin = new QDoubleSpinBox(this);
+    m_normMeanSpin->setRange(0.1, 100.0);
+    m_normMeanSpin->setSingleStep(0.5);
+    m_normMeanSpin->setValue(10.0);
+    m_normMeanSpin->setToolTip("μ: среднее время");
+    connect(m_normMeanSpin, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
+            &NodeInfoWidget::onDistributionParamsChanged);
+
+    m_normStdSpin = new QDoubleSpinBox(this);
+    m_normStdSpin->setRange(0.1, 20.0);
+    m_normStdSpin->setSingleStep(0.1);
+    m_normStdSpin->setValue(2.0);
+    m_normStdSpin->setToolTip("σ: стандартное отклонение");
+    connect(m_normStdSpin, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
+            &NodeInfoWidget::onDistributionParamsChanged);
+
+    m_normMeanSpin->setVisible(false);
+    m_normStdSpin->setVisible(false);
+
+    distLayout->addRow("Тип:", m_distTypeCombo);
+    distLayout->addRow("λ (эксп.):", m_expRateSpin);
+    distLayout->addRow("μ (норм.):", m_normMeanSpin);
+    distLayout->addRow("σ (норм.):", m_normStdSpin);
+
+    mainLayout->addWidget(m_distGroupBox);
+
     mainLayout->addStretch();
 
     for (auto *button: strategyGroup->buttons()) {
@@ -192,8 +237,73 @@ void NodeInfoWidget::refreshView() {
     summaryValue->setText(
             QString("Node #%1 | edges: %2 | inbox: %3").arg(model->id()).arg(edges.size()).arg(inboxMessages.size()));
 
+    if (currentNode && currentNode->model()) {
+        const auto &params = currentNode->model()->getDistributionParams();
+        const bool isNormal = (params.type == NodeModel::DistributionType::Normal);
+
+        guardDistUpdate = true;
+
+        if (const int index = isNormal ? 1 : 0; m_distTypeCombo->currentIndex() != index)
+            m_distTypeCombo->setCurrentIndex(index);
+
+        if (!isNormal) {
+            if (m_expRateSpin->value() != params.expRate)
+                m_expRateSpin->setValue(params.expRate);
+
+        } else {
+            if (m_normMeanSpin->value() != params.normMean)
+                m_normMeanSpin->setValue(params.normMean);
+            if (m_normStdSpin->value() != params.normStd)
+                m_normStdSpin->setValue(params.normStd);
+        }
+        m_expRateSpin->setVisible(!isNormal);
+        m_normMeanSpin->setVisible(isNormal);
+        m_normStdSpin->setVisible(isNormal);
+
+        if (m_distGroupBox)
+            m_distGroupBox->setEnabled(true);
+
+        guardDistUpdate = false;
+    } else {
+        if (m_distGroupBox)
+            m_distGroupBox->setEnabled(false);
+    }
+
     syncStrategyChecks();
     updateParamsVisibility();
+}
+
+void NodeInfoWidget::onDistributionTypeChanged(int index) {
+    if (!currentNode || !currentNode->model())
+        return;
+
+    const auto type = static_cast<NodeModel::DistributionType>(m_distTypeCombo->itemData(index).toInt());
+    currentNode->model()->setDistributionType(type);
+
+    const bool isNormal = (type == NodeModel::DistributionType::Normal);
+    m_expRateSpin->setVisible(!isNormal);
+    m_normMeanSpin->setVisible(isNormal);
+    m_normStdSpin->setVisible(isNormal);
+
+    const auto &params = currentNode->model()->getDistributionParams();
+    if (isNormal) {
+        m_normMeanSpin->setValue(params.normMean);
+        m_normStdSpin->setValue(params.normStd);
+    } else {
+        m_expRateSpin->setValue(params.expRate);
+    }
+}
+
+void NodeInfoWidget::onDistributionParamsChanged() {
+    if (!currentNode || !currentNode->model())
+        return;
+
+    auto type = static_cast<NodeModel::DistributionType>(m_distTypeCombo->currentData().toInt());
+    if (type == NodeModel::DistributionType::Normal) {
+        currentNode->model()->setNormalParams(m_normMeanSpin->value(), m_normStdSpin->value());
+    } else {
+        currentNode->model()->setExpRate(m_expRateSpin->value());
+    }
 }
 
 void NodeInfoWidget::clearView() {
@@ -218,6 +328,27 @@ void NodeInfoWidget::clearView() {
         for (auto *w: widgets)
             w->hide();
     }
+
+    guardDistUpdate = true;
+    if (m_distTypeCombo)
+        m_distTypeCombo->setCurrentIndex(0);
+    if (m_expRateSpin)
+        m_expRateSpin->setValue(0.1);
+    if (m_normMeanSpin)
+        m_normMeanSpin->setValue(10.0);
+    if (m_normStdSpin)
+        m_normStdSpin->setValue(2.0);
+    if (m_expRateSpin)
+        m_expRateSpin->setVisible(true);
+    if (m_normMeanSpin)
+        m_normMeanSpin->setVisible(false);
+    if (m_normStdSpin)
+        m_normStdSpin->setVisible(false);
+    guardDistUpdate = false;
+
+    if (m_distGroupBox)
+        m_distGroupBox->setEnabled(currentNode != nullptr && currentNode->model() != nullptr);
+
     strategyParamsWidgets.clear();
 }
 

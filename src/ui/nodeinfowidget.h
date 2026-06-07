@@ -1,5 +1,7 @@
 #pragma once
 
+#include <QComboBox>
+#include <QGroupBox>
 #include <QCheckBox>
 #include <QLabel>
 #include <QPlainTextEdit>
@@ -22,6 +24,8 @@ public:
 private slots:
     void onStrategyToggled(bool checked);
     void refreshView();
+    void onDistributionTypeChanged(int index);
+    void onDistributionParamsChanged();
 
 private:
     Node *currentNode = nullptr;
@@ -59,4 +63,11 @@ private:
 
     QDoubleSpinBox* createDoubleParam(const QString& label, double min, double max, double step, double value);
     QLabel* createReadOnlyParam(const QString& label, const QString& value);
+
+    QGroupBox* m_distGroupBox = nullptr;
+    QComboBox* m_distTypeCombo = nullptr;
+    QDoubleSpinBox* m_expRateSpin = nullptr;
+    QDoubleSpinBox* m_normMeanSpin = nullptr;
+    QDoubleSpinBox* m_normStdSpin = nullptr;
+    bool guardDistUpdate = false;
 };

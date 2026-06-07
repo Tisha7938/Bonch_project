@@ -56,6 +56,7 @@ void SimulationEngine::reset() {
     for (const auto &node: m_nodes) {
         node->setState(NodeModel::State::Operational);
         node->setReliability(1.0);
+        node->setNextFailureTime(0.0);
         m_nodeStats[node->id()] = NodeStats{};
     }
 }
@@ -119,13 +120,13 @@ std::vector<SimulationEngine::NodeFinalStats> SimulationEngine::getFinalStats() 
     std::vector<NodeFinalStats> stats;
     stats.reserve(m_nodes.size());
 
-    for (const auto& node : m_nodes) {
+    for (const auto &node: m_nodes) {
         NodeFinalStats s;
         s.id = node->id();
 
         auto it = m_nodeStats.find(node->id());
         if (it != m_nodeStats.end()) {
-            const auto& ns = it->second;
+            const auto &ns = it->second;
             double total = ns.runtime + ns.downtime;
             s.availabilityPercent = (total > 0.0) ? (ns.runtime / total * 100.0) : 100.0;
             s.totalRuntime = ns.runtime;
@@ -146,7 +147,7 @@ std::vector<SimulationEngine::NodeFinalStats> SimulationEngine::getFinalStats() 
     return stats;
 }
 
-bool SimulationEngine::exportStatsToCSV(const QString& fileName) const {
+bool SimulationEngine::exportStatsToCSV(const QString &fileName) const {
     QFile file(fileName);
     if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
         return false;
@@ -166,13 +167,10 @@ bool SimulationEngine::exportStatsToCSV(const QString& fileName) const {
     unsigned int totalMaintenances = 0;
 
     // Записываем данные по каждому узлу
-    for (const auto& s : stats) {
-        out << s.id << ";"
-            << QString::number(s.availabilityPercent, 'f', 2) << ";"
-            << QString::number(s.totalRuntime, 'f', 2) << ";"
-            << QString::number(s.totalDowntime, 'f', 2) << ";"
-            << s.failureCount << ";"
-            << s.maintenanceCount << "\n";
+    for (const auto &s: stats) {
+        out << s.id << ";" << QString::number(s.availabilityPercent, 'f', 2) << ";"
+            << QString::number(s.totalRuntime, 'f', 2) << ";" << QString::number(s.totalDowntime, 'f', 2) << ";"
+            << s.failureCount << ";" << s.maintenanceCount << "\n";
 
         totalAvailability += s.availabilityPercent;
         totalFailures += s.failureCount;
@@ -210,50 +208,61 @@ void SimulationEngine::processNode(NodeModel &node) {
         return;
     }
 
+    const auto &distParams = node.getDistributionParams();
+
     const auto state = node.state();
     if (state != NodeModel::State::Operational) {
         m_totalDowntime += m_dt;
         auto &stats = m_nodeStats[node.id()];
         stats.downtime += m_dt;
 
-        // TODO: восстановление за один такт. В реальной системе здесь был бы таймер восстановления - потом добавить
-        // (мейби)
         if (state == NodeModel::State::Failed) {
             handleRecovery(node);
+            const double nextFailure = m_emulator.sampleFailureTime(distParams.type, distParams.expRate,
+                                                                    distParams.normMean, distParams.normStd);
+            node.setNextFailureTime(m_currentTime + nextFailure);
         } else if (state == NodeModel::State::Maintenance) {
             auto it = m_maintenanceEndTimes.find(node.id());
             if (it != m_maintenanceEndTimes.end() && m_currentTime >= it->second) {
                 node.setState(NodeModel::State::Operational);
-                node.setReliability(1.0); // После профилактики надежность восстанавливается полностью
+                node.setReliability(1.0);
                 m_bus.sendTo(node.id(), "MAINT_COMPLETE");
                 if (m_eventCallback)
                     m_eventCallback(node.id(), "MAINT_COMPLETE");
                 m_maintenanceEndTimes.erase(it);
+
+                const double nextFailure = m_emulator.sampleFailureTime(distParams.type, distParams.expRate,
+                                                                        distParams.normMean, distParams.normStd);
+                node.setNextFailureTime(m_currentTime + nextFailure);
             }
         }
         return;
     }
 
-    if (strategy->checkMaintenance(m_currentTime)) {
-        double maintDuration = m_emulator.sampleMaintenanceTime();
-        m_maintenanceEndTimes[node.id()] = m_currentTime + maintDuration;
+    if (node.getNextFailureTime() <= 0.0) {
+        const double nextFailure = m_emulator.sampleFailureTime(distParams.type, distParams.expRate,
+                                                                distParams.normMean, distParams.normStd);
+        node.setNextFailureTime(m_currentTime + nextFailure);
+        return;
+    }
 
+    if (m_currentTime >= node.getNextFailureTime()) {
+        triggerFailure(node);
+        return;
+    }
+
+    if (strategy->checkMaintenance(m_currentTime)) {
+        const double maintDuration = m_emulator.sampleMaintenanceTime(distParams.type, distParams.expRate,
+                                                                      distParams.normMean, distParams.normStd);
+        m_maintenanceEndTimes[node.id()] = m_currentTime + maintDuration;
         node.setState(NodeModel::State::Maintenance);
         auto &stats = m_nodeStats[node.id()];
         stats.maintenanceCount++;
-
         m_bus.sendTo(node.id(), "MAINT_START");
         if (m_eventCallback)
             m_eventCallback(node.id(), "MAINTENANCE");
         return;
     }
-
-    double timeToFailure = m_emulator.sampleFailureTime();
-    if (timeToFailure <= m_dt) {
-        triggerFailure(node);
-        return;
-    }
-
     m_totalRuntime += m_dt;
     auto &stats = m_nodeStats[node.id()];
     stats.runtime += m_dt;
