@@ -14,9 +14,6 @@
 #include "logger.h"
 #include "nodemodel.h"
 #include "simulationengine.h"
-#include "strategybasiccontrol.h"
-#include "strategynocontrolcheck.h"
-#include "strategyofflinecheck.h"
 
 // Подключаем наши классы
 #include "node.h"
@@ -559,19 +556,6 @@ void MainWindow::syncSimulationModelsWithGraph() {
         auto model = existingModels.value(id);
         if (!model) {
             model = std::make_shared<NodeModel>(id);
-
-            // циклически для демонстрации
-            switch (id % 3) {
-                case 0:
-                    model->setStrategy(std::make_unique<StrategyBasicControl>());
-                    break;
-                case 1:
-                    model->setStrategy(std::make_unique<StrategyNoControlCheck>());
-                    break;
-                default:
-                    model->setStrategy(std::make_unique<StrategyOfflineCheck>());
-                    break;
-            }
         }
 
         m_nodeModels.push_back(model);
@@ -582,7 +566,7 @@ void MainWindow::syncSimulationModelsWithGraph() {
     }
 
     if (!m_simulation) {
-        m_simulation = std::make_unique<SimulationEngine>(0.1, "exponential");
+        m_simulation = std::make_unique<SimulationEngine>(0.1);
         m_simulation->setEventCallback([this](unsigned int nodeId, const std::string &event) {
             Logger::event(nodeId, QString::fromStdString(event));
         });
@@ -605,6 +589,8 @@ void MainWindow::onSimulationStart() {
         if (!m_simulation)
             return;
     }
+
+    m_simulation->reset();
 
     if (m_resultsTabs) {
         m_resultsTabs->setTabEnabled(1, false);

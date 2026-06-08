@@ -29,7 +29,6 @@ set(UI_SOURCES
         src/ui/edge.cpp
         src/ui/nodeinfowidget.cpp
         src/ui/reliabilitychart.cpp
-        src/ui/reliabilitychart.h
 )
 set(UI_HEADERS
         src/ui/mainwindow.h
@@ -39,7 +38,6 @@ set(UI_HEADERS
         src/ui/edge.h
         src/ui/nodeinfowidget.h
         src/core/enums/graphenums.h
-        src/ui/reliabilitychart.cpp
         src/ui/reliabilitychart.h
 )
 set(UI_FORMS
@@ -133,3 +131,20 @@ target_include_directories(final_project PRIVATE
         ${CMAKE_SOURCE_DIR}/src/ui
         ${CMAKE_SOURCE_DIR}/src/utils
 )
+
+if(WIN32)
+    get_filename_component(MINGW_RUNTIME_DIR "${CMAKE_CXX_COMPILER}" DIRECTORY)
+
+    add_custom_command(TARGET final_project POST_BUILD
+            COMMAND Qt6::windeployqt
+                    --no-translations
+                    --no-compiler-runtime
+                    $<TARGET_FILE:final_project>
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                    "${MINGW_RUNTIME_DIR}/libgcc_s_seh-1.dll"
+                    "${MINGW_RUNTIME_DIR}/libstdc++-6.dll"
+                    "${MINGW_RUNTIME_DIR}/libwinpthread-1.dll"
+                    $<TARGET_FILE_DIR:final_project>
+            COMMENT "Deploying Qt runtime dependencies"
+    )
+endif()

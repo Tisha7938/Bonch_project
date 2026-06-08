@@ -28,8 +28,7 @@ public:
 
     //! @brief Конструктор
     //! @param dt Шаг симуляции (единицы модельного времени)
-    //! @param distMode Режим распределения ("exponential", "weibull", "normal")
-    explicit SimulationEngine(double dt = 0.1, const std::string &distMode = "exponential");
+    explicit SimulationEngine(double dt = 0.1);
 
     //! @brief Привязка набора вершин для симуляции
     void setNodes(const std::vector<std::shared_ptr<NodeModel>> &nodes);
@@ -62,6 +61,7 @@ public:
 
     //! @brief Получить историю надёжности для построения графика
     const std::vector<ReliabilityPoint> &getReliabilityHistory() const { return m_reliabilityHistory; }
+    std::vector<ReliabilityPoint> buildInstantAvailabilityHistory(int iterations = 10000) const;
 
     //! @brief Очистить историю (перед новым запуском)
     void clearReliabilityHistory() { m_reliabilityHistory.clear(); }
@@ -113,6 +113,7 @@ private:
     };
     std::map<unsigned int, NodeStats> m_nodeStats;
     std::map<unsigned int, double> m_maintenanceEndTimes;
+    std::map<unsigned int, double> m_recoveryEndTimes;
 
     StepCallback m_stepCallback;
     EventCallback m_eventCallback;
