@@ -37,6 +37,7 @@ private:
     QPlainTextEdit *inboxValue = nullptr;
 
     // === Выбор стратегии (8 чекбоксов) ===
+    QCheckBox *strategyNoneCheck = nullptr;
     QCheckBox *strategyBasicControlCheck = nullptr;
     QCheckBox *strategyInstantDetectionCheck = nullptr;
     QCheckBox *strategyPreventiveWithControlCheck = nullptr;

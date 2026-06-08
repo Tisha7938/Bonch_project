@@ -83,6 +83,7 @@ NodeInfoWidget::NodeInfoWidget(QWidget *parent) : QWidget(parent) {
         return check;
     };
 
+    strategyNoneCheck = addStrategyCheck("No strategy");
     strategyBasicControlCheck = addStrategyCheck("1.1 BasicControl");
     strategyInstantDetectionCheck = addStrategyCheck("1.2 InstantDetection");
     strategyPreventiveWithControlCheck = addStrategyCheck("2.1 Preventive+Control");
@@ -184,7 +185,11 @@ void NodeInfoWidget::onStrategyToggled(bool checked) {
             btn->setChecked(false);
     }
 
-    currentNode->model()->setStrategy(createStrategyFor(senderCheck));
+    std::unique_ptr<IMaintenanceStrategy> strategy;
+    if (senderCheck != strategyNoneCheck) {
+        strategy = createStrategyFor(senderCheck);
+    }
+    currentNode->model()->setStrategy(std::move(strategy));
 
     updateParamsVisibility();
 
@@ -274,7 +279,7 @@ void NodeInfoWidget::refreshView() {
 }
 
 void NodeInfoWidget::onDistributionTypeChanged(int index) {
-    if (!currentNode || !currentNode->model())
+    if (guardDistUpdate || !currentNode || !currentNode->model())
         return;
 
     const auto type = static_cast<NodeModel::DistributionType>(m_distTypeCombo->itemData(index).toInt());
@@ -295,7 +300,7 @@ void NodeInfoWidget::onDistributionTypeChanged(int index) {
 }
 
 void NodeInfoWidget::onDistributionParamsChanged() {
-    if (!currentNode || !currentNode->model())
+    if (guardDistUpdate || !currentNode || !currentNode->model())
         return;
 
     auto type = static_cast<NodeModel::DistributionType>(m_distTypeCombo->currentData().toInt());
@@ -367,7 +372,9 @@ void NodeInfoWidget::syncStrategyChecks() {
         btn->setChecked(false);
     }
 
-    if (strategy) {
+    if (!strategy && strategyNoneCheck) {
+        strategyNoneCheck->setChecked(true);
+    } else if (strategy) {
         if (dynamic_cast<const StrategyBasicControl *>(strategy))
             strategyBasicControlCheck->setChecked(true);
         else if (dynamic_cast<const StrategyInstantDetection *>(strategy))
@@ -389,6 +396,9 @@ void NodeInfoWidget::syncStrategyChecks() {
 }
 
 std::unique_ptr<IMaintenanceStrategy> NodeInfoWidget::createStrategyFor(QObject *checkBox) const {
+    if (checkBox == strategyNoneCheck) {
+        return nullptr;
+    }
     if (checkBox == strategyBasicControlCheck) {
         return std::make_unique<StrategyBasicControl>();
     }

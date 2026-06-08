@@ -3,6 +3,7 @@
 #include <QFileDialog>
 #include <QMessageBox>
 #include <QTextStream>
+#include <algorithm>
 #include "../core/simulation/simulationengine.h"
 
 ReliabilityChartWidget::ReliabilityChartWidget(QWidget *parent) : QWidget(parent) { setupUI(); }
@@ -78,7 +79,11 @@ void ReliabilityChartWidget::updateChart(const SimulationEngine *engine) {
     if (!engine)
         return;
 
-    const auto &history = engine->getReliabilityHistory();
+    auto history = engine->buildInstantAvailabilityHistory();
+    if (history.empty()) {
+        const auto &recordedHistory = engine->getReliabilityHistory();
+        history.assign(recordedHistory.begin(), recordedHistory.end());
+    }
     if (history.empty()) {
         m_statusLabel->setText("Нет данных для отображения");
         return;
@@ -90,43 +95,43 @@ void ReliabilityChartWidget::updateChart(const SimulationEngine *engine) {
 
     m_series->clear();
 
+    bool hasVisiblePoint = false;
+    double minVal = 0.0;
+    double maxVal = 0.0;
+
     for (size_t i = 0; i < history.size(); ++i) {
         if (i % SKIP_POINTS == 0) {
-            m_series->append(history[i].timestamp, history[i].availability);
-        }
-    }
+            const double availability = history[i].availability;
+            m_series->append(history[i].timestamp, availability);
 
-    if (!history.empty()) {
-        m_axisX->setRange(0, history.back().timestamp);
-
-        double minVal = 1.0;
-        double maxVal = 0.0;
-        for (const auto &[timestamp, availability]: history) {
-            if (availability < minVal)
+            if (!hasVisiblePoint) {
                 minVal = availability;
-            if (availability > maxVal)
                 maxVal = availability;
+                hasVisiblePoint = true;
+            } else {
+                minVal = std::min(minVal, availability);
+                maxVal = std::max(maxVal, availability);
+            }
         }
-
-        const double range = maxVal - minVal;
-        const double padding = (range > 0.0) ? range * 0.1 : 0.1;
-
-        double newYMin = std::max(0.0, minVal - padding);
-        double newYMax = std::min(1.0, maxVal + padding);
-
-        if (newYMax - newYMin < 0.2) {
-            const double center = (newYMin + newYMax) / 2.0;
-            newYMin = std::max(0.0, center - 0.1);
-            newYMax = std::min(1.0, center + 0.1);
-        }
-
-        m_axisY->setRange(newYMin, newYMax);
     }
+
+    m_axisX->setRange(0, history.back().timestamp);
+
+    double yMin = std::max(0.0, minVal);
+    double yMax = std::max(1.0, maxVal);
+    if (!hasVisiblePoint) {
+        yMin = 0.0;
+        yMax = 1.0;
+    } else if (yMax <= yMin) {
+        yMin = std::max(0.0, yMin - 0.01);
+    }
+
+    m_axisY->setRange(yMin, yMax);
 
     m_pointCount = static_cast<int>(history.size());
     m_statusLabel->setText(QString("Записано точек: %1 | Текущий Kг: %2")
                                    .arg(history.size())
-                                   .arg(engine->getGlobalAvailability(), 0, 'f', 4));
+                                   .arg(history.back().availability, 0, 'f', 4));
 
     m_chartView->chart()->update();
 }
